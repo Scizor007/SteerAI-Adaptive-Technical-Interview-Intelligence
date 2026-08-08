@@ -6,16 +6,16 @@
 
 ## Todo
 
-- [ ] Integrate LLM for question generation (QuestionGenerator)
 - [ ] Integrate LLM for response evaluation (EvaluationEngine)
-- [ ] Integrate LLM for follow-up generation (FollowupGenerator)
-- [ ] Integrate LLM for feedback synthesis (FeedbackGenerator)
 - [ ] End-to-end integration testing
 
 ## In Progress
 
 ## Done
 
+- [x] Integrate LLM for question generation (QuestionGenerator)
+- [x] Integrate LLM for follow-up generation (FollowupGenerator)
+- [x] Integrate LLM for feedback synthesis (FeedbackGenerator)
 - [x] Complete UI Redesign (SteerAI)
 - [x] Build Landing page
 - [x] Build Candidate Selection page

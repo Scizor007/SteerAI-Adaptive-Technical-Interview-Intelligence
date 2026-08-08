@@ -8,26 +8,27 @@ Responsibility:
     topic's priority in the interview plan.
 """
 
-from models.schemas import CandidateProfile
+from models.schemas import CandidateProfile, PlannedTopic
+from services.llm_service import LLMService
+from services.prompt_builders.question_prompt import build_question_prompt
 
 
 class QuestionGenerator:
     """Generates contextual interview questions based on topic and candidate profile."""
 
+    def __init__(self, llm_service: LLMService = None):
+        """Initialize with optional LLMService for dependency injection."""
+        self.llm = llm_service or LLMService()
+
     def generate(
         self,
-        topic,  # PlannedTopic or TopicPlan — duck-typed on .title / .priority
+        topic: PlannedTopic,
         candidate: CandidateProfile,
         experience_level: str,
         questions_already_asked: list[str],
     ) -> str:
         """
-        Generate a single interview question for the given topic.
-
-        The question difficulty and framing adapt based on:
-        - The topic's priority (high = fundamental, low = depth-check)
-        - The candidate's experience level
-        - Previously asked questions (avoid repetition)
+        Generate a single interview question for the given topic via Gemini.
 
         Args:
             topic: The current topic plan entry.
@@ -38,38 +39,16 @@ class QuestionGenerator:
         Returns:
             A question string to present to the candidate.
         """
-        # TODO: Replace with LLM-powered question generation
-        # This stub returns a template-based question for scaffolding validation
-        priority = topic.priority.value if hasattr(topic.priority, 'value') else topic.priority
-        difficulty = self._map_difficulty(priority, experience_level)
-
-        return (
-            f"Regarding {topic.title}: "
-            f"Can you explain your understanding of this topic "
-            f"and how you would apply it in a real-world scenario? "
-            f"[Difficulty: {difficulty}]"
+        # Build prompt
+        prompt = build_question_prompt(
+            topic=topic,
+            candidate=candidate,
+            experience_level=experience_level,
+            questions_already_asked=questions_already_asked
         )
-
-    def _map_difficulty(self, priority: str, experience_level: str) -> str:
-        """Map topic priority + experience to question difficulty."""
-        if priority == "high":
-            # Gap topic — start with fundamentals regardless of experience
-            return "foundational"
-        elif priority == "medium":
-            # Struggled topic — match to experience
-            level_map = {
-                "junior": "intermediate",
-                "mid": "intermediate",
-                "senior": "advanced",
-                "expert": "advanced",
-            }
-            return level_map.get(experience_level, "intermediate")
-        else:
-            # Strong topic — push deeper
-            level_map = {
-                "junior": "intermediate",
-                "mid": "advanced",
-                "senior": "expert",
-                "expert": "expert",
-            }
-            return level_map.get(experience_level, "advanced")
+        
+        # Generate and parse JSON via LLMService
+        response_data = self.llm.generate_json(prompt, fallback_type="question")
+        
+        # Extract the question text
+        return response_data.get("question", "Could you explain your understanding of this topic?")

@@ -9,10 +9,16 @@ Responsibility:
 """
 
 from models.schemas import QuestionRecord
+from services.llm_service import LLMService
+from services.prompt_builders.followup_prompt import build_followup_prompt
 
 
 class FollowupGenerator:
     """Generates contextual follow-up questions based on candidate responses."""
+
+    def __init__(self, llm_service: LLMService = None):
+        """Initialize with optional LLMService for dependency injection."""
+        self.llm = llm_service or LLMService()
 
     def should_follow_up(self, record: QuestionRecord, max_followups: int = 2) -> bool:
         """
@@ -28,8 +34,9 @@ class FollowupGenerator:
         if record.followup_count >= max_followups:
             return False
 
-        # TODO: Replace with LLM-based evaluation of answer completeness
-        # For now, follow up if the answer is very short (likely incomplete)
+        # Keeping the deterministic check based on prompt:
+        # "The deterministic backend remains responsible for... interview progression"
+        # We will follow up if the answer is short.
         if record.answer and len(record.answer.strip()) < 50:
             return True
 
@@ -42,7 +49,7 @@ class FollowupGenerator:
         topic_title: str,
     ) -> str:
         """
-        Generate a follow-up question that probes deeper into the topic.
+        Generate a follow-up question that probes deeper into the topic via Gemini.
 
         Args:
             original_question: The question that was asked.
@@ -52,9 +59,12 @@ class FollowupGenerator:
         Returns:
             A follow-up question string.
         """
-        # TODO: Replace with LLM-powered follow-up generation
-        return (
-            f"That's a good start on {topic_title}. "
-            f"Could you elaborate further on the practical implications "
-            f"and any challenges you've encountered?"
+        prompt = build_followup_prompt(
+            original_question=original_question,
+            candidate_answer=candidate_answer,
+            topic_title=topic_title
         )
+        
+        response_data = self.llm.generate_json(prompt, fallback_type="followup")
+        
+        return response_data.get("question", "Could you elaborate further on that?")

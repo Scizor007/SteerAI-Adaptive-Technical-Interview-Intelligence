@@ -50,3 +50,13 @@
 - **Goal**: Configure Breeth MCP Development Tooling
 - **Prompt**: "Configure Breeth MCP as a DEVELOPMENT MEMORY system only. Breeth is NOT part of the application runtime. The interview platform must work perfectly even if Breeth is unavailable. Do not modify application behavior. Do not add Breeth to frontend or backend runtime... Verify that the existing Breeth MCP configuration is correct... Update CONTEXT.md, INSTRUCTIONS.md, HANDOFF.md..."
 - **Result**: Added Breeth MCP configuration to the global IDE `mcp_config.json` using the developer-provided JSON snippet. Updated project documentation to strictly enforce Breeth as development-only tooling with no secrets exposed.
+
+---
+
+## PROMPT-006
+
+- **Prompt ID**: PROMPT-006
+- **Timestamp**: 2026-08-08T11:46:15+05:30
+- **Goal**: Integrate Gemini into the existing backend architecture.
+- **Prompt**: "Integrate Gemini into the existing backend architecture. Gemini should ONLY generate natural language. The deterministic backend remains responsible for candidate analysis, interview planning, etc. Create a dedicated AI layer... LLMService, Prompt Builders, Output Parser... Do NOT implement RAG, LangChain, etc. Keep implementation lightweight."
+- **Result**: Implemented a dedicated AI Layer using `google-generativeai`. Created `LLMService` to handle retries and config, `LLMParser` for robust JSON parsing with fallbacks, and strict Prompt Builders (`question_prompt`, `followup_prompt`, `feedback_prompt`). Refactored `QuestionGenerator`, `FollowupGenerator`, and `FeedbackGenerator` to use Gemini. Added lightweight tests in `test_llm.py` and updated `_smoke_test.py` to use dynamic session IDs. Verified successful backend compilation and E2E interview functionality.

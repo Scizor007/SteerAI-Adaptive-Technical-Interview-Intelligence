@@ -1,6 +1,9 @@
 """Quick API smoke test."""
 import urllib.request
 import json
+import uuid
+
+session_id = f"verify-{uuid.uuid4().hex[:8]}"
 
 # Health check
 resp = urllib.request.urlopen("http://localhost:8000/health")
@@ -9,7 +12,7 @@ print(f"Health: {health}")
 
 # Start interview
 payload = {
-    "sessionId": "verify-001",
+    "sessionId": session_id,
     "candidate": {
         "member": {
             "id": "CAND-001",
@@ -39,7 +42,7 @@ print(f"Reply: {result['reply'][:150]}...")
 
 # Continue interview
 payload2 = {
-    "sessionId": "verify-001",
+    "sessionId": session_id,
     "message": "I would use Prometheus for metrics collection, Grafana for dashboards, and implement structured logging with correlation IDs across microservices.",
 }
 data2 = json.dumps(payload2).encode()

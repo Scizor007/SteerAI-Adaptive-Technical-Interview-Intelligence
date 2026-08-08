@@ -80,3 +80,13 @@
 - **Chosen option**: Build a fully deterministic pipeline (Loader → Analyzer → Planner → ContextBuilder) that feeds structured data to the downstream LLM modules.
 - **Reason**: Separating pure logic from IO (LLMs) ensures the core business logic (who is the candidate, what are their gaps, what is the plan) is testable, fast, and 100% accurate. The LLM acts only as a natural language interface on top of this rock-solid foundation.
 - **Impact**: Created `CandidateAnalysis`, `InterviewPlan`, and `InterviewContext` schemas. Rewired `InterviewManager` to run the deterministic pipeline on startup. Future LLM modules will simply consume the unified `InterviewContext`.
+
+---
+
+## DEC-009: Dedicated LLM AI Layer
+
+- **Timestamp**: 2026-08-08
+- **Problem**: How to integrate Gemini for dynamic question/follow-up/feedback generation without leaking prompt engineering and API logic into the core business modules.
+- **Chosen option**: Create a dedicated `LLMService`, `LLMParser`, and `prompt_builders` layer.
+- **Reason**: Decoupling the API communication (retries, timeouts) and prompt construction from the generators (`QuestionGenerator`, etc.) adheres to the single responsibility principle. It also centralizes JSON parsing and error recovery (fallbacks).
+- **Impact**: Added `google-generativeai` dependency. Prompts are constructed purely from the deterministic `InterviewContext` and returned JSON is robustly parsed to avoid crashing the interview workflow.

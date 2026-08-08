@@ -6,38 +6,35 @@
 
 ## Current Task
 
-**Complete.** The deterministic backend foundation (Loaders → Analyzer → Planner → Session Manager → Context Builder) has been successfully implemented using strictly typed Pydantic models (Python 3.7+ compatible).
-
-**Development Tooling configured.** Breeth MCP has been configured as a development memory system and verified.
+**Complete.** The Gemini LLM integration has been successfully completed. We added `LLMService`, `LLMParser`, and `prompt_builders`. `QuestionGenerator`, `FollowupGenerator`, and `FeedbackGenerator` now successfully call Gemini to generate dynamic natural language responses while maintaining structured JSON contracts.
 
 ## Next Phase
 
-**LLM Integration (Question Generation).** The core pipeline now correctly processes the `curriculum.json` and `candidates.json`, analyzes candidate gaps, and produces an `InterviewPlan`. The next step is to replace the `QuestionGenerator` stub with actual LLM calls using the rich `InterviewContext`.
+**LLM Integration (Response Evaluation).** The core pipeline now correctly outputs natural language questions and follow-ups. The next step is to replace the `EvaluationEngine` stub to accurately score candidate answers using the LLM.
 
 ## Current Blocker
 
-None. The backend passes all smoke tests and runs successfully on Python 3.11.
+None. The backend passes all smoke tests and runs successfully with Gemini integrated.
 
 ## Next AI Instruction
 
-1. Open `backend/modules/question_generator.py`.
-2. Integrate a real LLM (e.g., OpenAI, Anthropic, Gemini) to generate adaptive questions based on the provided `PlannedTopic` and `CandidateProfile` available in the `InterviewContext`.
-3. Add any necessary environment variables (`.env`) for the LLM API keys.
-4. Ensure the output is clean, natural text suitable for the frontend.
+1. Open `backend/modules/evaluation_engine.py`.
+2. Integrate `LLMService` to score candidate answers (0.0 to 1.0) based on the provided expected points.
+3. Keep the deterministic math for calculating `overall_score` (average of all questions) but use Gemini to evaluate individual answers.
+4. Run `_smoke_test.py` to ensure the session progresses without crashing and the score reflects actual performance.
 
 ## Last Modified Files
 
 | File | Change |
 |------|--------|
-| `backend/models/schemas.py` | Complete rewrite with enums, `CandidateAnalysis`, and `InterviewContext` |
-| `backend/modules/candidate_loader.py` | New module for pure data access |
-| `backend/modules/curriculum_loader.py` | New module with indexed lookups |
-| `backend/modules/candidate_analyzer.py` | Full deterministic rewrite with confidence scoring |
-| `backend/modules/interview_planner.py` | Full deterministic rewrite with difficulty escalation |
-| `backend/modules/context_builder.py` | New module to merge state for downstream LLMs |
-| `backend/modules/session_manager.py` | Enhanced to accept analysis and plan upfront |
-| `backend/modules/interview_manager.py` | Rewired pipeline: Analyzer → Planner → Session → Context |
-| `backend/_smoke_test.py` | Created end-to-end API verification script |
-| `CONTEXT.md` / `TASKS.md` | Updated architecture flow and task completion |
+| `backend/config.py` & `.env` | Added Gemini configurations. |
+| `backend/services/llm_service.py` | Added Gemini communication layer. |
+| `backend/services/parsers/llm_parser.py` | Added JSON parsing and fallback layer. |
+| `backend/services/prompt_builders/*` | Added prompts for questions, follow-ups, and feedback. |
+| `backend/modules/question_generator.py` | Refactored to use `LLMService`. |
+| `backend/modules/followup_generator.py` | Refactored to use `LLMService`. |
+| `backend/modules/feedback_generator.py` | Refactored to use `LLMService`. |
+| `backend/test_llm.py` | Added lightweight parser and prompt builder tests. |
+| `backend/_smoke_test.py` | Made session_id dynamic (UUID). |
 
 ---

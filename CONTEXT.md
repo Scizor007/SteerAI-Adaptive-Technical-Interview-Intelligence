@@ -165,16 +165,17 @@ candidate answer → Evaluation Engine → Feedback Generator → API Response
 - [x] Full UI Component System (20+ components)
 - [x] Complete Frontend Pages (Landing, Candidates, Interview Workspace, Feedback, Architecture)
 - [x] React Router setup
+- [x] LLM integration for question generation (Backend)
+- [x] LLM integration for follow-up generation (Backend)
+- [x] LLM integration for feedback synthesis (Backend)
 
 ## Pending Features
 
-- [ ] LLM integration for question generation (Backend)
-- [ ] LLM integration for response evaluation (Backend)
-- [ ] LLM integration for feedback synthesis (Backend)
+- [ ] LLM integration for response evaluation (Backend) - *Next step*
 - [ ] E2E Testing
 
 ## Current Sprint
 
-**Sprint 2 — LLM Integration & Backend Logic** (upcoming)
+**Sprint 2 — LLM Integration & Backend Logic** (Ongoing)
 
 ---

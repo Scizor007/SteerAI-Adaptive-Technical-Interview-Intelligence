@@ -14,10 +14,16 @@ from models.schemas import (
     QuestionRecord,
     TopicPlan,
 )
+from services.llm_service import LLMService
+from services.prompt_builders.feedback_prompt import build_feedback_prompt
 
 
 class FeedbackGenerator:
     """Generates structured interview feedback from evaluation results."""
+
+    def __init__(self, llm_service: LLMService = None):
+        """Initialize with optional LLMService for dependency injection."""
+        self.llm = llm_service or LLMService()
 
     def generate(
         self,
@@ -28,7 +34,7 @@ class FeedbackGenerator:
         overall_score: float,
     ) -> Feedback:
         """
-        Generate final structured feedback.
+        Generate final structured feedback via Gemini.
 
         Args:
             candidate: The candidate's profile.
@@ -40,55 +46,17 @@ class FeedbackGenerator:
         Returns:
             Feedback object matching the technical specification.
         """
-        # TODO: Replace with LLM-powered feedback synthesis
-        strengths = [
-            f"Strong understanding of {topic}"
-            for topic, score in topic_scores.items()
-            if score >= 0.7
-        ]
-
-        gaps = [
-            f"Needs improvement in {topic}"
-            for topic, score in topic_scores.items()
-            if score < 0.5
-        ]
-
-        # Add skipped topics as gaps
-        skipped_titles = {
-            tp.title for tp in topic_plan if tp.priority == "high"
-        }
-        covered_titles = set(topic_scores.keys())
-        uncovered = skipped_titles - covered_titles
-        for title in uncovered:
-            gaps.append(f"Topic not covered: {title}")
-
-        next_steps = self._generate_next_steps(gaps, candidate)
-
-        score_pct = round(overall_score * 100)
-        summary = (
-            f"Interview completed for {candidate.member.name} "
-            f"({candidate.member.jobRole}). "
-            f"Overall performance: {score_pct}%. "
-            f"Covered {len(topic_scores)} topics across the curriculum."
+        prompt = build_feedback_prompt(
+            candidate=candidate,
+            questions=questions,
+            overall_score=overall_score
         )
-
+        
+        response_data = self.llm.generate_json(prompt, fallback_type="feedback")
+        
         return Feedback(
-            summary=summary,
-            strengths=strengths if strengths else ["Candidate showed willingness to engage with topics"],
-            gaps=gaps if gaps else ["No significant gaps identified"],
-            next=next_steps,
+            summary=response_data.get("summary", "Interview completed."),
+            strengths=response_data.get("strengths", ["Completed the assessment"]),
+            gaps=response_data.get("gaps", ["No significant gaps identified"]),
+            next=response_data.get("next", response_data.get("recommendations", ["Keep practicing"]))
         )
-
-    def _generate_next_steps(
-        self,
-        gaps: list[str],
-        candidate: CandidateProfile,
-    ) -> list[str]:
-        """Generate actionable next steps based on identified gaps."""
-        # TODO: Replace with LLM-powered recommendations
-        steps = []
-        if gaps:
-            steps.append("Review and practice the topics identified as gaps")
-            steps.append("Work through the curriculum exercises for weak areas")
-        steps.append("Continue building projects to reinforce practical skills")
-        return steps

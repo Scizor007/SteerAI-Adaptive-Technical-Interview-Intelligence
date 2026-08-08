@@ -67,3 +67,14 @@
 31. **Implement MVP first, then polish** — never delay P1 for P5.
 32. **Never generate the whole project in one pass** — work incrementally.
 33. **Preserve previous work** unless explicitly instructed to remove it.
+
+## Development Tooling (Breeth MCP)
+
+34. **Never expose Breeth API keys.**
+35. **Never store secrets in Breeth.**
+36. **Never store environment variables.**
+37. **Store concise milestone summaries only.**
+38. **Store architectural decisions.**
+39. **Store implementation summaries.**
+40. **Store bug fix summaries.**
+41. **Store next development milestone.**

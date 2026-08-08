@@ -113,6 +113,19 @@ src/
 
 ---
 
+## Development Tooling
+
+### Breeth MCP
+**Purpose**: Developer memory only.
+
+**Usage**:
+- Architecture summaries
+- Milestone summaries
+- Bug summaries
+- Next-step handoffs
+
+*Note: Breeth MCP is not used by the application runtime.*
+
 ## API Endpoints
 
 | Method | Path | Purpose |

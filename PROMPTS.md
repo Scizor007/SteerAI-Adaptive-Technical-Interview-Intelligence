@@ -40,3 +40,13 @@
 - **Goal**: Deterministic Backend Foundation (Pre-LLM Pipeline)
 - **Prompt**: "This prompt focuses ONLY on the backend foundation. Do NOT implement LLM integrations. Build the deterministic backend pipeline... Implement Candidate Loader, Curriculum Loader, Candidate Analyzer (deterministic), Interview Planner (deterministic), Interview Context Builder... Follow SOLID principles. Strongly typed Pydantic models... Separate pure logic from IO."
 - **Result**: Completely rewrote the backend data ingestion and planning pipeline. Created robust Pydantic schemas (compatible with Python 3.7+ typing). Built `CandidateAnalyzer` to deterministically score candidates and find gaps. Built `InterviewPlanner` to schedule questions with escalating difficulty. Built `InterviewContextBuilder` to unify state for downstream LLM consumption. Verified the API end-to-end via `_smoke_test.py`.
+
+---
+
+## PROMPT-005
+
+- **Prompt ID**: PROMPT-005
+- **Timestamp**: 2026-08-08T11:20:00+05:30
+- **Goal**: Configure Breeth MCP Development Tooling
+- **Prompt**: "Configure Breeth MCP as a DEVELOPMENT MEMORY system only. Breeth is NOT part of the application runtime. The interview platform must work perfectly even if Breeth is unavailable. Do not modify application behavior. Do not add Breeth to frontend or backend runtime... Verify that the existing Breeth MCP configuration is correct... Update CONTEXT.md, INSTRUCTIONS.md, HANDOFF.md..."
+- **Result**: Added Breeth MCP configuration to the global IDE `mcp_config.json` using the developer-provided JSON snippet. Updated project documentation to strictly enforce Breeth as development-only tooling with no secrets exposed.

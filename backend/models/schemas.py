@@ -1,14 +1,71 @@
 """
 Pydantic models for the interview API.
 Matches the technical specification contract exactly.
+
+This file contains:
+  - Candidate Profile models (from candidates.json)
+  - Curriculum models (from curriculum.json)
+  - API Request / Response models
+  - Internal interview state models
+  - Analysis / Planning / Context output models
+
+Compatible with Python 3.7+ via typing imports.
 """
 
-from __future__ import annotations
-from typing import Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 from pydantic import BaseModel, Field
 
 
-# --- Candidate Profile ---
+# ────────────────────────────────────────────────────────────────
+# Enums
+# ────────────────────────────────────────────────────────────────
+
+class Difficulty(str, Enum):
+    """Question difficulty levels, ordered by increasing complexity."""
+    FOUNDATIONAL = "foundational"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+    EXPERT = "expert"
+
+
+class ExperienceLevel(str, Enum):
+    """Candidate experience tiers derived from years of experience."""
+    JUNIOR = "junior"
+    MID = "mid"
+    SENIOR = "senior"
+    EXPERT = "expert"
+
+
+class TopicPriority(str, Enum):
+    """Priority for covering a topic in the interview plan."""
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class InterviewPhase(str, Enum):
+    """Phases an interview session can be in."""
+    INITIALIZING = "initializing"
+    ASKING = "asking"
+    LISTENING = "listening"
+    EVALUATING = "evaluating"
+    COMPLETE = "complete"
+
+
+class MissionStatus(str, Enum):
+    """Derived status of a single curriculum mission for a candidate."""
+    PASSED = "passed"
+    PASSED_FIRST_TRY = "passed_first_try"
+    STRUGGLED = "struggled"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    NOT_ATTEMPTED = "not_attempted"
+
+
+# ────────────────────────────────────────────────────────────────
+# Candidate Profile (from candidates.json)
+# ────────────────────────────────────────────────────────────────
 
 class Mission(BaseModel):
     """A single curriculum mission completed (or skipped) by a candidate."""
@@ -39,11 +96,40 @@ class Member(BaseModel):
 class CandidateProfile(BaseModel):
     """Full candidate profile as supplied in candidates.json."""
     member: Member
-    missions: list[Mission]
+    missions: List[Mission]
     signals: Signals
 
 
-# --- API Request / Response ---
+# ────────────────────────────────────────────────────────────────
+# Curriculum (from curriculum.json)
+# ────────────────────────────────────────────────────────────────
+
+class DayObjective(BaseModel):
+    """A single day in the curriculum."""
+    day: int
+    title: str
+    type: str
+    tools: List[str]
+    objectives: List[str]
+
+
+class Module(BaseModel):
+    """A curriculum module spanning multiple days."""
+    n: int
+    title: str
+    days: List[int]
+
+
+class Curriculum(BaseModel):
+    """Full curriculum structure."""
+    cohort: str
+    modules: List[Module]
+    days: List[DayObjective]
+
+
+# ────────────────────────────────────────────────────────────────
+# API Request / Response
+# ────────────────────────────────────────────────────────────────
 
 class InterviewRequest(BaseModel):
     """
@@ -59,9 +145,9 @@ class InterviewRequest(BaseModel):
 class Feedback(BaseModel):
     """Structured feedback returned when the interview ends."""
     summary: str
-    strengths: list[str]
-    gaps: list[str]
-    next: list[str] = Field(alias="next")
+    strengths: List[str]
+    gaps: List[str]
+    next: List[str] = Field(alias="next")
 
 
 class InterviewResponse(BaseModel):
@@ -71,35 +157,112 @@ class InterviewResponse(BaseModel):
     feedback: Optional[Feedback] = None
 
 
-# --- Curriculum ---
+# ────────────────────────────────────────────────────────────────
+# Candidate Analysis (output of CandidateAnalyzer)
+# ────────────────────────────────────────────────────────────────
 
-class DayObjective(BaseModel):
-    """A single day in the curriculum."""
+class TopicInsight(BaseModel):
+    """Analysis of a candidate's performance on one curriculum topic."""
     day: int
     title: str
-    type: str
-    tools: list[str]
-    objectives: list[str]
+    status: MissionStatus
+    attempts: Optional[int] = None
+    module_name: str = ""
 
 
-class Module(BaseModel):
-    """A curriculum module spanning multiple days."""
-    n: int
+class CandidateAnalysis(BaseModel):
+    """
+    Complete deterministic analysis of a candidate profile.
+    Produced by CandidateAnalyzer. Consumed by InterviewPlanner.
+    """
+    candidate_id: str
+    candidate_name: str
+    experience_level: ExperienceLevel
+    strengths: List[TopicInsight] = []
+    weaknesses: List[TopicInsight] = []
+    skipped_topics: List[TopicInsight] = []
+    completed_topics: List[TopicInsight] = []
+    struggled_topics: List[TopicInsight] = []
+    not_attempted_topics: List[TopicInsight] = []
+    completion_rate: float = 0.0
+    first_try_rate: float = 0.0
+    confidence_score: float = 0.0
+    recommended_difficulty: Difficulty = Difficulty.INTERMEDIATE
+    recommended_starting_topic: Optional[str] = None
+    reasoning: List[str] = []
+
+
+# ────────────────────────────────────────────────────────────────
+# Interview Plan (output of InterviewPlanner)
+# ────────────────────────────────────────────────────────────────
+
+class PlannedTopic(BaseModel):
+    """A single topic scheduled for the interview, with metadata."""
+    day: int
     title: str
-    days: list[int]
+    module_name: str
+    priority: TopicPriority
+    difficulty: Difficulty
+    reason: str
+    objectives: List[str] = []
+    tools: List[str] = []
 
 
-class Curriculum(BaseModel):
-    """Full curriculum structure."""
-    cohort: str
-    modules: list[Module]
-    days: list[DayObjective]
+class InterviewPlan(BaseModel):
+    """
+    Deterministic interview plan produced by InterviewPlanner.
+    Contains metadata only — no natural-language questions.
+    """
+    candidate_id: str
+    planned_topics: List[PlannedTopic] = []
+    total_planned_questions: int = 0
+    unique_days_covered: int = 0
+    unique_modules_covered: int = 0
+    starting_difficulty: Difficulty = Difficulty.INTERMEDIATE
+    reasoning: List[str] = []
 
 
-# --- Interview State (internal) ---
+# ────────────────────────────────────────────────────────────────
+# Coverage & Progress (tracked across the session)
+# ────────────────────────────────────────────────────────────────
 
+class CoverageState(BaseModel):
+    """Tracks which curriculum days and modules have been covered."""
+    days_covered: List[int] = []
+    modules_covered: List[str] = []
+    topics_asked: List[str] = []
+
+
+class InterviewProgress(BaseModel):
+    """Tracks overall interview progression."""
+    questions_asked: int = 0
+    questions_remaining: int = 0
+    current_topic_index: int = 0
+    current_difficulty: Difficulty = Difficulty.INTERMEDIATE
+    phase: InterviewPhase = InterviewPhase.INITIALIZING
+
+
+# ────────────────────────────────────────────────────────────────
+# Question Record (kept per asked question)
+# ────────────────────────────────────────────────────────────────
+
+class QuestionRecord(BaseModel):
+    """Record of a question asked and the candidate's response."""
+    topic: str
+    question: str
+    difficulty: Difficulty = Difficulty.INTERMEDIATE
+    answer: Optional[str] = None
+    score: Optional[float] = None
+    followup_count: int = 0
+
+
+# ────────────────────────────────────────────────────────────────
+# Interview State (persisted in SessionManager)
+# ────────────────────────────────────────────────────────────────
+
+# Keep the original TopicPlan for backward-compat with existing stubs
 class TopicPlan(BaseModel):
-    """A planned interview topic with its priority."""
+    """A planned interview topic with its priority (legacy compat)."""
     day: int
     title: str
     module: str
@@ -107,23 +270,40 @@ class TopicPlan(BaseModel):
     reason: str
 
 
-class QuestionRecord(BaseModel):
-    """Record of a question asked and the candidate's response."""
-    topic: str
-    question: str
-    answer: Optional[str] = None
-    score: Optional[float] = None
-    followup_count: int = 0
-
-
 class InterviewState(BaseModel):
     """Complete state for an active interview session."""
     session_id: str
     candidate: CandidateProfile
-    topic_plan: list[TopicPlan] = []
+    analysis: Optional[CandidateAnalysis] = None
+    plan: Optional[InterviewPlan] = None
+    topic_plan: List[TopicPlan] = []  # legacy compat
     current_topic_index: int = 0
-    questions_asked: list[QuestionRecord] = []
-    conversation_history: list[dict] = []
-    phase: str = "initializing"  # initializing | asking | listening | evaluating | complete
+    questions_asked: List[QuestionRecord] = []
+    conversation_history: List[Dict[str, Any]] = []
+    phase: str = "initializing"
     total_questions: int = 0
     max_questions: int = 10
+    coverage: CoverageState = Field(default_factory=CoverageState)
+    progress: InterviewProgress = Field(default_factory=InterviewProgress)
+
+
+# ────────────────────────────────────────────────────────────────
+# Interview Context (built by InterviewContextBuilder)
+# ────────────────────────────────────────────────────────────────
+
+class InterviewContext(BaseModel):
+    """
+    Single object merging all information needed by downstream modules.
+    Every future module (QuestionGenerator, EvaluationEngine, etc.)
+    should consume this instead of querying multiple services.
+    """
+    session_id: str
+    candidate: CandidateProfile
+    analysis: CandidateAnalysis
+    plan: InterviewPlan
+    progress: InterviewProgress
+    coverage: CoverageState
+    questions_asked: List[QuestionRecord] = []
+    conversation_history: List[Dict[str, Any]] = []
+    current_topic: Optional[PlannedTopic] = None
+    current_difficulty: Difficulty = Difficulty.INTERMEDIATE

@@ -70,3 +70,13 @@
 - **Chosen option**: Massive whitespace increase and layout simplification across all 4 main screens.
 - **Reason**: A premium product guides the user by answering one question per screen. Removing unnecessary borders, hiding sidebars during the interview, and enlarging typography creates a calm, confident UX.
 - **Impact**: Interview workspace is now centered on the question alone. Sidebars are collapsible. Candidate cards show 60% less text. Landing page hero is drastically simplified. Immersive AI transitions replaced static loading indicators.
+
+---
+
+## DEC-008: Deterministic Backend Pipeline (Pre-LLM)
+
+- **Timestamp**: 2026-08-08
+- **Problem**: How to ensure the AI doesn't hallucinate candidate gaps or invent curriculum topics?
+- **Chosen option**: Build a fully deterministic pipeline (Loader → Analyzer → Planner → ContextBuilder) that feeds structured data to the downstream LLM modules.
+- **Reason**: Separating pure logic from IO (LLMs) ensures the core business logic (who is the candidate, what are their gaps, what is the plan) is testable, fast, and 100% accurate. The LLM acts only as a natural language interface on top of this rock-solid foundation.
+- **Impact**: Created `CandidateAnalysis`, `InterviewPlan`, and `InterviewContext` schemas. Rewired `InterviewManager` to run the deterministic pipeline on startup. Future LLM modules will simply consume the unified `InterviewContext`.

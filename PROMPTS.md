@@ -29,5 +29,14 @@
 - **Prompt ID**: PROMPT-003
 - **Timestamp**: 2026-08-08T02:16:38+05:30
 - **Goal**: UI Refinement (Reduce visual noise, increase whitespace, improve UX hierarchy)
-- **Prompt**: "You are now acting as a Senior Product Designer... The current UI is visually overcrowded. It feels like an admin dashboard instead of an interview experience... Reduce visual noise by at least 40%. Increase whitespace significantly... One primary action per screen. One visual focal point per screen... The QUESTION should dominate the screen... Immersive transitions... Treat Feedback page like a professional assessment report..."
 - **Result**: Completely overhauled Landing, Candidate Selection, Interview Workspace, and Feedback pages. Simplified candidate cards to minimal data. Changed Interview Workspace to a centered focus mode with collapsible sidebar and immersive AI evaluation transitions. Reduced borders and cards on Feedback page to emphasize the hero score and typography.
+
+---
+
+## PROMPT-004
+
+- **Prompt ID**: PROMPT-004 (User referred to as P002)
+- **Timestamp**: 2026-08-08T10:30:00+05:30
+- **Goal**: Deterministic Backend Foundation (Pre-LLM Pipeline)
+- **Prompt**: "This prompt focuses ONLY on the backend foundation. Do NOT implement LLM integrations. Build the deterministic backend pipeline... Implement Candidate Loader, Curriculum Loader, Candidate Analyzer (deterministic), Interview Planner (deterministic), Interview Context Builder... Follow SOLID principles. Strongly typed Pydantic models... Separate pure logic from IO."
+- **Result**: Completely rewrote the backend data ingestion and planning pipeline. Created robust Pydantic schemas (compatible with Python 3.7+ typing). Built `CandidateAnalyzer` to deterministically score candidates and find gaps. Built `InterviewPlanner` to schedule questions with escalating difficulty. Built `InterviewContextBuilder` to unify state for downstream LLM consumption. Verified the API end-to-end via `_smoke_test.py`.

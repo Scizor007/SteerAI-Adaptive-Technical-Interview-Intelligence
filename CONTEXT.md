@@ -24,13 +24,16 @@ POST /api/interview
         │
         ▼
   Interview Manager (orchestrator)
-  ├── Candidate Analyzer    → extracts strengths/weaknesses/gaps from missions & signals
-  ├── Interview Planner     → builds prioritized topic list from curriculum + gaps
-  ├── Question Generator    → produces adaptive questions per topic/difficulty
-  ├── Follow-up Generator   → probes deeper based on response quality
-  ├── Evaluation Engine     → scores responses, tracks cumulative performance
-  ├── Feedback Generator    → produces summary/strengths/gaps/next
-  └── Session Manager       → in-memory dict keyed by sessionId
+  ├── Candidate Loader      → parses and exposes candidates.json
+  ├── Curriculum Loader     → parses and indexes curriculum.json
+  ├── Candidate Analyzer    → extracts strengths/weaknesses/gaps (deterministic)
+  ├── Interview Planner     → builds prioritized topic list (deterministic)
+  ├── Session Manager       → in-memory dict keyed by sessionId
+  ├── Interview Context Builder → merges session state for LLM consumption
+  ├── Question Generator    → produces adaptive questions (stub)
+  ├── Follow-up Generator   → probes deeper based on response quality (stub)
+  ├── Evaluation Engine     → scores responses, tracks performance (stub)
+  └── Feedback Generator    → produces summary/strengths/gaps/next (stub)
 ```
 
 ### Frontend Architecture

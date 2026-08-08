@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Question Generator module.
 
@@ -7,7 +8,7 @@ Responsibility:
     topic's priority in the interview plan.
 """
 
-from models.schemas import TopicPlan, CandidateProfile
+from models.schemas import CandidateProfile
 
 
 class QuestionGenerator:
@@ -15,7 +16,7 @@ class QuestionGenerator:
 
     def generate(
         self,
-        topic: TopicPlan,
+        topic,  # PlannedTopic or TopicPlan — duck-typed on .title / .priority
         candidate: CandidateProfile,
         experience_level: str,
         questions_already_asked: list[str],
@@ -39,7 +40,8 @@ class QuestionGenerator:
         """
         # TODO: Replace with LLM-powered question generation
         # This stub returns a template-based question for scaffolding validation
-        difficulty = self._map_difficulty(topic.priority, experience_level)
+        priority = topic.priority.value if hasattr(topic.priority, 'value') else topic.priority
+        difficulty = self._map_difficulty(priority, experience_level)
 
         return (
             f"Regarding {topic.title}: "

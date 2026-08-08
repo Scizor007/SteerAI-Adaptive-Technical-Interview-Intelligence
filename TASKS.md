@@ -35,12 +35,14 @@
 - [x] Design token CSS setup (SteerAI 8-color system)
 - [x] Project scaffolding (backend + frontend)
 - [x] Backend module architecture (8 modules)
-- [x] Pydantic schema models
-- [x] FastAPI router (POST /api/interview)
-- [x] Interview Manager orchestrator
-- [x] Candidate Analyzer (working stub)
-- [x] Interview Planner (working stub)
-- [x] Session Manager (fully functional)
+- [x] Pydantic schema models (strongly typed with enums)
+- [x] Candidate Loader (pure data access)
+- [x] Curriculum Loader (pure data access)
+- [x] Candidate Analyzer (deterministic implemented)
+- [x] Interview Planner (deterministic implemented)
+- [x] Interview Context Builder (implemented)
+- [x] Session Manager (fully functional, rich state)
+- [x] Interview Manager orchestrator (pipeline rewired)
 - [x] Backend data files (curriculum.json, candidates.json)
 - [x] Documentation framework updated
 

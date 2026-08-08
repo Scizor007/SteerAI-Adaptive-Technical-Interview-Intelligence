@@ -79,6 +79,9 @@ class EvaluationEngine:
 
     def _normalize_result(self, response: Dict[str, Any]) -> EvaluationResult:
         """Validate untrusted LLM JSON and compute the weighted per-answer score."""
+        # Check if this is a fallback response
+        is_fallback = response.get("_fallback", False)
+        
         scores = {dimension: self._normalize_score(response.get(dimension)) for dimension in self.DIMENSIONS}
         overall = sum(scores[dimension] * self.ANSWER_WEIGHTS[dimension] for dimension in self.DIMENSIONS)
         missing_points = self._string_list(response.get("missing_points"))
@@ -93,7 +96,7 @@ class EvaluationEngine:
         else:
             difficulty_recommendation = "maintain"
 
-        return EvaluationResult(
+        result = EvaluationResult(
             **scores,
             overall=round(overall, 2),
             strengths=strengths,
@@ -106,6 +109,12 @@ class EvaluationEngine:
             difficulty_recommendation=difficulty_recommendation,
             knowledge_gap=knowledge_gap,
         )
+        
+        # Mark as fallback if needed
+        if is_fallback:
+            result._fallback = True
+        
+        return result
 
     def calculate_topic_mastery(self, evaluations: List[EvaluationEvidence]) -> Dict[str, float]:
         """Average each topic's evidence scores and normalize mastery to 0-100."""

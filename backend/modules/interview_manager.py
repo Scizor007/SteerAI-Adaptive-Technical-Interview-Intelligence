@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
+import logging
 """
 Interview Manager — orchestrator module.
 
@@ -15,6 +16,8 @@ Responsibility:
     Future modules (not yet implemented):
         QuestionGenerator, FollowupGenerator, EvaluationEngine, FeedbackGenerator
 """
+
+logger = logging.getLogger(__name__)
 
 from models.schemas import (
     CandidateProfile,
@@ -172,6 +175,8 @@ class InterviewManager:
         state.conversation_history.append({"role": "candidate", "content": message})
 
         current_record = state.questions_asked[-1] if state.questions_asked else None
+        evaluation_result = None
+        
         if current_record and current_record.answer is None:
             current_record.answer = message
 
@@ -181,16 +186,24 @@ class InterviewManager:
                 current_question=current_record,
                 answer=message,
             )
-            current_record.score = evaluation_result.overall / 10
-            state.evaluations.append(EvaluationEvidence(
-                question=current_record.question,
-                topic=current_record.topic,
-                candidate_answer=message,
-                expected_points=current_record.expected_points,
-                evaluation_result=evaluation_result,
-                timestamp=datetime.now(timezone.utc).isoformat(),
-            ))
-            state.topic_mastery = self.evaluation_engine.calculate_topic_mastery(state.evaluations)
+            
+            # Only store evaluation if it's not a fallback
+            is_fallback = getattr(evaluation_result, '_fallback', False)
+            
+            if not is_fallback:
+                current_record.score = evaluation_result.overall / 10
+                state.evaluations.append(EvaluationEvidence(
+                    question=current_record.question,
+                    topic=current_record.topic,
+                    candidate_answer=message,
+                    expected_points=current_record.expected_points,
+                    evaluation_result=evaluation_result,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                ))
+                state.topic_mastery = self.evaluation_engine.calculate_topic_mastery(state.evaluations)
+            else:
+                # Evaluation unavailable - log and continue safely
+                logger.warning(f"[INTERVIEW] Evaluation unavailable for question, continuing interview")
 
         # Build context for decision-making
         context = self.context_builder.build(state)
@@ -200,20 +213,28 @@ class InterviewManager:
             return self._end_interview(session_id, state)
 
         # Decide: follow-up or next topic
+        # Pass evaluation_result to should_follow_up for intelligent decision
         if current_record and self.followup_generator.should_follow_up(
-            current_record, MAX_FOLLOWUPS_PER_TOPIC
+            current_record, evaluation_result, MAX_FOLLOWUPS_PER_TOPIC
         ):
+            logger.info(f"[INTERVIEW] Generating follow-up (count: {current_record.followup_count + 1}/{MAX_FOLLOWUPS_PER_TOPIC})")
+            
             generated_followup = self.followup_generator.generate(
                 original_question=current_record.question,
                 candidate_answer=message,
                 topic_title=current_record.topic,
             )
+            
+            # CRITICAL FIX: Increment followup_count on the CURRENT record
+            # The new question record inherits the count from its parent
             current_record.followup_count += 1
+            
             state.questions_asked.append(QuestionRecord(
                 topic=current_record.topic,
                 question=generated_followup.question,
                 difficulty=generated_followup.estimated_difficulty,
                 expected_points=generated_followup.expected_points,
+                followup_count=current_record.followup_count,  # Inherit count
             ))
             state.total_questions += 1
             state.phase = "asking"

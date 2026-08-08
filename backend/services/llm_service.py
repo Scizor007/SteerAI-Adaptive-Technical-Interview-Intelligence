@@ -17,14 +17,44 @@ class LLMService:
         self.provider: LLMProvider | None = None
         
         provider_name = config.LLM_PROVIDER
+        
+        # Startup validation and logging
+        logger.info("="*80)
+        logger.info("[LLM CONFIG] Initializing LLM Service")
+        logger.info(f"[LLM CONFIG] Provider: {provider_name}")
+        
         if provider_name == "openrouter":
             from services.llm.openrouter_provider import OpenRouterProvider
-            self.provider = OpenRouterProvider()
+            
+            if not config.OPENROUTER_API_KEY or config.OPENROUTER_API_KEY.startswith("<"):
+                logger.error("[LLM CONFIG] CRITICAL: OPENROUTER_API_KEY is not configured!")
+                logger.error("[LLM CONFIG] Application will use fallbacks for all LLM calls")
+                logger.error("[LLM CONFIG] Set OPENROUTER_API_KEY in .env file")
+                self.provider = None
+            else:
+                logger.info(f"[LLM CONFIG] Model: {config.OPENROUTER_MODEL}")
+                logger.info(f"[LLM CONFIG] API Key: configured (not shown)")
+                self.provider = OpenRouterProvider()
+                
         elif provider_name == "gemini":
             from services.llm.gemini_provider import GeminiProvider
-            self.provider = GeminiProvider()
+            
+            if not config.GEMINI_API_KEY or config.GEMINI_API_KEY.startswith("<"):
+                logger.error("[LLM CONFIG] CRITICAL: GEMINI_API_KEY is not configured!")
+                logger.error("[LLM CONFIG] Application will use fallbacks for all LLM calls")
+                logger.error("[LLM CONFIG] Set GEMINI_API_KEY in .env file")
+                self.provider = None
+            else:
+                logger.info(f"[LLM CONFIG] Model: {config.MODEL_NAME}")
+                logger.info(f"[LLM CONFIG] API Key: configured (not shown)")
+                self.provider = GeminiProvider()
         else:
-            logger.warning(f"Unknown LLM_PROVIDER '{provider_name}'. LLMService will use fallbacks.")
+            logger.error(f"[LLM CONFIG] Unknown LLM_PROVIDER '{provider_name}'")
+            logger.error("[LLM CONFIG] Valid options: 'gemini', 'openrouter'")
+            logger.error("[LLM CONFIG] Application will use fallbacks for all LLM calls")
+            self.provider = None
+            
+        logger.info("="*80)
 
     def generate_json(self, prompt: str, fallback_type: str = "question", caller_module: str = "unknown") -> Dict[str, Any]:
         """

@@ -1,6 +1,6 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, TrendingUp, AlertTriangle, BookOpen, Route } from 'lucide-react';
+import { Download, TrendingUp, AlertTriangle } from 'lucide-react';
 import {
   Radar,
   RadarChart,
@@ -11,42 +11,24 @@ import {
 import { useEffect, useMemo } from 'react';
 import { AppLayout } from '../../layouts';
 import { useCandidates } from '../../hooks';
-import { generateMockFeedback } from '../../utils';
-import { Avatar, Badge, Button, LoadingState, Progress, Timeline } from '../../components/ui';
+import { Badge, Button, LoadingState, Timeline } from '../../components/ui';
 import { COLORS } from '../../constants/designTokens';
-
-function CurriculumHeatmap({ heatmap }: { heatmap: { day: number; status: string }[] }) {
-  return (
-    <div className="grid grid-cols-[repeat(31,minmax(0,1fr))] gap-1">
-      {heatmap.map((cell) => (
-        <div
-          key={cell.day}
-          title={`Day ${cell.day}: ${cell.status}`}
-          className={`aspect-square rounded-[2px] ${
-            cell.status === 'passed'
-              ? 'bg-signal'
-              : cell.status === 'struggled'
-                ? 'bg-warning'
-                : cell.status === 'skipped'
-                  ? 'bg-error'
-                  : 'bg-surface'
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
+import type { Feedback } from '../../types';
 
 export function FeedbackPage() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { getById, loading } = useCandidates();
   const candidate = candidateId ? getById(candidateId) : undefined;
 
-  const report = useMemo(
-    () => (candidate ? generateMockFeedback(candidate) : null),
-    [candidate]
-  );
+  const report = useMemo(() => {
+    const navigationFeedback = (location.state as { feedback?: Feedback } | null)?.feedback;
+    if (navigationFeedback) return navigationFeedback;
+    if (!candidateId) return null;
+    const saved = sessionStorage.getItem(`steerai-feedback-${candidateId}`);
+    return saved ? (JSON.parse(saved) as Feedback) : null;
+  }, [candidateId, location.state]);
 
   useEffect(() => {
     if (!loading && candidateId && !candidate) {
@@ -54,7 +36,7 @@ export function FeedbackPage() {
     }
   }, [loading, candidateId, candidate, navigate]);
 
-  if (loading || !candidate || !report) {
+  if (loading || !candidate) {
     return (
       <AppLayout>
         <LoadingState message="Finalizing assessment report…" />
@@ -62,8 +44,23 @@ export function FeedbackPage() {
     );
   }
 
+  if (!report) {
+    return (
+      <AppLayout>
+        <LoadingState message="No completed assessment is available for this candidate." />
+      </AppLayout>
+    );
+  }
+
   const { member } = candidate;
-  const radarData = report.skills.map((s) => ({ subject: s.skill, score: s.score }));
+  const radarData = [
+    ['Accuracy', report.accuracy],
+    ['Reasoning', report.reasoning],
+    ['Depth', report.depth],
+    ['Completeness', report.completeness],
+    ['Communication', report.communication],
+    ['Confidence', report.confidence],
+  ].map(([subject, score]) => ({ subject, score }));
 
   const handleDownload = () => {
     const blob = new Blob([JSON.stringify({ candidate: member, report }, null, 2)], {
@@ -93,7 +90,7 @@ export function FeedbackPage() {
           
           <div className="mb-8 flex items-center justify-center gap-4 text-text-primary">
             <span className="font-display text-8xl md:text-[140px] font-bold tracking-tighter leading-none">
-              {report.overallScore}
+              {report.overall_score}
             </span>
             <span className="text-2xl md:text-4xl font-light text-text-secondary mt-auto pb-4 md:pb-8">
               / 100
@@ -188,7 +185,7 @@ export function FeedbackPage() {
                 Identified Gaps
               </h3>
               <ul className="space-y-3">
-                {report.weaknesses.map((w) => (
+              {report.gaps.map((w) => (
                   <li key={w} className="text-base text-text-secondary font-light">
                     {w}
                   </li>
@@ -207,7 +204,7 @@ export function FeedbackPage() {
               Recommended Path
             </h2>
             <div className="space-y-6">
-              {report.improvementPath.map((step, i) => (
+              {report.next.map((step, i) => (
                 <div key={step} className="flex gap-4">
                   <span className="font-mono text-sm text-text-secondary opacity-50 mt-1">
                     {(i + 1).toString().padStart(2, '0')}
@@ -223,24 +220,29 @@ export function FeedbackPage() {
               Interview Timeline
             </h2>
             <Timeline
-              items={report.timeline.map((e, i) => ({
-                id: e.id,
-                label: e.label,
-                detail: e.detail,
-                time: e.time,
-                status: i === report.timeline.length - 1 ? 'active' : 'completed',
+              items={report.evidence.map((evidence, i) => ({
+                id: `${i}`,
+                label: `Interview evidence ${i + 1}`,
+                detail: evidence,
+                time: 'Recorded',
+                status: i === report.evidence.length - 1 ? 'active' : 'completed',
               }))}
             />
           </div>
         </div>
         
-        {/* Heatmap Footer */}
+        {/* Evidence-based topic mastery */}
         <div className="rounded-3xl bg-surface/30 p-10 text-center">
           <h2 className="mb-8 text-sm font-medium tracking-widest uppercase text-text-secondary">
-            Curriculum Footprint
+            Topic Mastery
           </h2>
-          <div className="mx-auto max-w-xl">
-             <CurriculumHeatmap heatmap={candidate.insights.heatmap} />
+          <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(report.topic_mastery).map(([topic, score]) => (
+              <div key={topic} className="rounded-2xl border border-border/60 px-5 py-4 text-left">
+                <p className="text-sm text-text-secondary">{topic}</p>
+                <p className="mt-2 font-mono text-2xl text-text-primary">{score}%</p>
+              </div>
+            ))}
           </div>
         </div>
       </motion.div>

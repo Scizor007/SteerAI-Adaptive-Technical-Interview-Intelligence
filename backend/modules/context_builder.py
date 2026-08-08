@@ -87,6 +87,8 @@ class InterviewContextBuilder:
             progress=progress,
             coverage=coverage,
             questions_asked=state.questions_asked,
+            evaluations=state.evaluations,
+            topic_mastery=state.topic_mastery,
             conversation_history=state.conversation_history,
             current_topic=current_topic,
             current_difficulty=current_difficulty,

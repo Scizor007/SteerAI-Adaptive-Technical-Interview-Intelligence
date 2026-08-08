@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Brain, GitBranch, Target, Zap } from 'lucide-react';
 import { AppLayout } from '../../layouts';
-import { Button, Card } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { BRAND } from '../../constants/designTokens';
 
 const FEATURES = [

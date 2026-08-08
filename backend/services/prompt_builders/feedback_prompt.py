@@ -1,38 +1,38 @@
-from typing import List, Dict, Any
-from models.schemas import CandidateProfile, QuestionRecord
+from typing import Dict, List
+
+from models.schemas import EvaluationEvidence, InterviewScoreSummary
 
 def build_feedback_prompt(
-    candidate: CandidateProfile,
-    questions: List[QuestionRecord],
-    overall_score: float
+    evaluations: List[EvaluationEvidence],
+    topic_mastery: Dict[str, float],
+    score_summary: InterviewScoreSummary,
 ) -> str:
     """
     Builds the prompt to generate the final interview feedback.
     """
     
-    # Format the interview transcript
-    transcript_text = ""
-    for idx, q in enumerate(questions):
-        transcript_text += f"\n--- Question {idx + 1} (Topic: {q.topic}, Difficulty: {q.difficulty.value}) ---\n"
-        transcript_text += f"Interviewer: {q.question}\n"
-        answer = q.answer if q.answer else "[No answer provided]"
-        transcript_text += f"Candidate: {answer}\n"
-        score = q.score if q.score is not None else 0.0
-        transcript_text += f"Evaluated Score: {score:.1f}/1.0\n"
+    evidence_text = ""
+    for idx, evidence in enumerate(evaluations):
+        result = evidence.evaluation_result
+        evidence_text += f"\n--- Answer {idx + 1}: {evidence.topic} ---\n"
+        evidence_text += f"Question: {evidence.question}\n"
+        evidence_text += f"Answer: {evidence.candidate_answer}\n"
+        evidence_text += f"Scores: accuracy={result.accuracy}, reasoning={result.reasoning}, depth={result.depth}, communication={result.communication}\n"
+        evidence_text += f"Strengths: {', '.join(result.strengths) or 'None'}\n"
+        evidence_text += f"Missing points: {', '.join(result.missing_points) or 'None'}\n"
+        evidence_text += f"Misconceptions: {', '.join(result.misconceptions) or 'None'}\n"
         
     prompt = f"""
 You are an expert Senior Technical Interviewer and Assessor for a premium AI Assessment Platform called SteerAI.
 
-You have just concluded a technical interview with the candidate.
-Candidate Name: {candidate.member.name}
-Role: {candidate.member.jobRole}
-Overall Calculated Score: {overall_score * 100:.1f}%
-
-Here is the transcript of the interview and the automated evaluation scores per question:
-{transcript_text}
+Generate a final assessment ONLY from the interview evidence below. Do not use or infer profile, curriculum completion, employment history, or unobserved skills.
+Overall evidence-based score: {score_summary.overall_score:.1f}%
+Topic mastery: {topic_mastery}
+Evidence:
+{evidence_text}
 
 Instructions:
-1. Synthesize the candidate's performance into a final assessment.
+1. Synthesize the candidate's demonstrated performance into a final assessment.
 2. Identify 2-3 specific technical strengths demonstrated in the interview.
 3. Identify 1-2 specific technical gaps or areas for improvement.
 4. Provide 2-3 actionable next steps or recommendations.

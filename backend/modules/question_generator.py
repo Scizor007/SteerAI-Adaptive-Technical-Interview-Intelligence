@@ -8,7 +8,7 @@ Responsibility:
     topic's priority in the interview plan.
 """
 
-from models.schemas import CandidateProfile, PlannedTopic
+from models.schemas import CandidateProfile, Difficulty, GeneratedQuestion, PlannedTopic
 from services.llm_service import LLMService
 from services.prompt_builders.question_prompt import build_question_prompt
 
@@ -26,7 +26,7 @@ class QuestionGenerator:
         candidate: CandidateProfile,
         experience_level: str,
         questions_already_asked: list[str],
-    ) -> str:
+    ) -> GeneratedQuestion:
         """
         Generate a single interview question for the given topic via Gemini.
 
@@ -50,5 +50,20 @@ class QuestionGenerator:
         # Generate and parse JSON via LLMService
         response_data = self.llm.generate_json(prompt, fallback_type="question")
         
-        # Extract the question text
-        return response_data.get("question", "Could you explain your understanding of this topic?")
+        difficulty = self._parse_difficulty(response_data.get("estimated_difficulty"), topic.difficulty)
+        return GeneratedQuestion(
+            question=str(response_data.get("question") or "Could you explain your understanding of this topic?"),
+            expected_points=self._string_list(response_data.get("expected_points")),
+            estimated_difficulty=difficulty,
+        )
+
+    @staticmethod
+    def _parse_difficulty(value, fallback: Difficulty) -> Difficulty:
+        try:
+            return Difficulty(str(value).lower())
+        except ValueError:
+            return fallback
+
+    @staticmethod
+    def _string_list(value) -> list[str]:
+        return [str(item).strip() for item in value] if isinstance(value, list) else []

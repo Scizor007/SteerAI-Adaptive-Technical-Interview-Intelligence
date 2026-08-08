@@ -4,7 +4,11 @@ Centralizes all environment and runtime settings.
 """
 
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # Keeps the application importable in test environments without python-dotenv.
+    def load_dotenv():
+        return False
 
 load_dotenv()
 

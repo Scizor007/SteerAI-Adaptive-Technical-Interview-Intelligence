@@ -148,6 +148,16 @@ class Feedback(BaseModel):
     strengths: List[str]
     gaps: List[str]
     next: List[str] = Field(alias="next")
+    overall_score: float = 0.0
+    accuracy: float = 0.0
+    reasoning: float = 0.0
+    depth: float = 0.0
+    completeness: float = 0.0
+    communication: float = 0.0
+    confidence: float = 0.0
+    topic_mastery: Dict[str, float] = Field(default_factory=dict)
+    evidence: List[str] = Field(default_factory=list)
+    interviewer_notes: List[str] = Field(default_factory=list)
 
 
 class InterviewResponse(BaseModel):
@@ -251,9 +261,60 @@ class QuestionRecord(BaseModel):
     topic: str
     question: str
     difficulty: Difficulty = Difficulty.INTERMEDIATE
+    expected_points: List[str] = Field(default_factory=list)
     answer: Optional[str] = None
     score: Optional[float] = None
     followup_count: int = 0
+
+
+class GeneratedQuestion(BaseModel):
+    """LLM-generated question metadata retained for answer evaluation."""
+    question: str
+    expected_points: List[str] = Field(default_factory=list)
+    estimated_difficulty: Difficulty = Difficulty.INTERMEDIATE
+
+
+class EvaluationResult(BaseModel):
+    """Normalized, evidence-based evaluation for one submitted answer."""
+    accuracy: float = Field(default=0.0, ge=0.0, le=10.0)
+    reasoning: float = Field(default=0.0, ge=0.0, le=10.0)
+    depth: float = Field(default=0.0, ge=0.0, le=10.0)
+    completeness: float = Field(default=0.0, ge=0.0, le=10.0)
+    communication: float = Field(default=0.0, ge=0.0, le=10.0)
+    confidence: float = Field(default=0.0, ge=0.0, le=10.0)
+    overall: float = Field(default=0.0, ge=0.0, le=10.0)
+    strengths: List[str] = Field(default_factory=list)
+    missing_points: List[str] = Field(default_factory=list)
+    misconceptions: List[str] = Field(default_factory=list)
+    suggested_followup: Optional[str] = None
+    topic_mastery: str = "Low"
+    interviewer_notes: str = ""
+    needs_followup: bool = False
+    difficulty_recommendation: str = "maintain"
+    knowledge_gap: Optional[str] = None
+
+
+class EvaluationEvidence(BaseModel):
+    """Immutable evidence captured for each candidate answer in a session."""
+    question: str
+    topic: str
+    candidate_answer: str
+    expected_points: List[str] = Field(default_factory=list)
+    evaluation_result: EvaluationResult
+    timestamp: str
+
+
+class InterviewScoreSummary(BaseModel):
+    """Accumulated evidence-based interview dimensions, normalized to 0-100."""
+    overall_score: float = 0.0
+    accuracy: float = 0.0
+    reasoning: float = 0.0
+    depth: float = 0.0
+    completeness: float = 0.0
+    communication: float = 0.0
+    confidence: float = 0.0
+    coverage_bonus: float = 0.0
+    consistency_bonus: float = 0.0
 
 
 # ────────────────────────────────────────────────────────────────
@@ -279,6 +340,8 @@ class InterviewState(BaseModel):
     topic_plan: List[TopicPlan] = []  # legacy compat
     current_topic_index: int = 0
     questions_asked: List[QuestionRecord] = []
+    evaluations: List[EvaluationEvidence] = Field(default_factory=list)
+    topic_mastery: Dict[str, float] = Field(default_factory=dict)
     conversation_history: List[Dict[str, Any]] = []
     phase: str = "initializing"
     total_questions: int = 0
@@ -304,6 +367,8 @@ class InterviewContext(BaseModel):
     progress: InterviewProgress
     coverage: CoverageState
     questions_asked: List[QuestionRecord] = []
+    evaluations: List[EvaluationEvidence] = Field(default_factory=list)
+    topic_mastery: Dict[str, float] = Field(default_factory=dict)
     conversation_history: List[Dict[str, Any]] = []
     current_topic: Optional[PlannedTopic] = None
     current_difficulty: Difficulty = Difficulty.INTERMEDIATE

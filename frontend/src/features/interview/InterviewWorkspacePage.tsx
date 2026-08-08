@@ -2,8 +2,6 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  CheckCircle2,
-  FileText,
   PanelLeftClose,
   PanelLeftOpen,
   Send,
@@ -16,9 +14,7 @@ import {
   Avatar,
   Badge,
   Button,
-  Card,
   Progress,
-  Sidebar,
   Textarea,
 } from '../../components/ui';
 
@@ -91,7 +87,10 @@ export function InterviewWorkspacePage() {
   const { member } = candidate;
 
   if (interview.phase === 'complete') {
-    navigate(`/feedback/${member.id}`, { replace: true });
+    if (interview.feedback) {
+      sessionStorage.setItem(`steerai-feedback-${member.id}`, JSON.stringify(interview.feedback));
+    }
+    navigate(`/feedback/${member.id}`, { replace: true, state: { feedback: interview.feedback } });
     return null;
   }
 
@@ -177,6 +176,10 @@ export function InterviewWorkspacePage() {
                     <p className="mb-6 text-sm font-medium uppercase tracking-widest text-accent">
                       Topic: {interview.currentQuestion.topic}
                     </p>
+
+                    {interview.error && (
+                      <p className="mb-6 text-sm text-error">{interview.error}</p>
+                    )}
 
                     {/* Massive Question Text */}
                     <h2 className="font-display text-3xl font-semibold leading-tight tracking-tight text-text-primary md:text-5xl mb-12">

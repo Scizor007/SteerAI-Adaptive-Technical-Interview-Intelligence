@@ -1,8 +1,12 @@
 import logging
 from typing import Any, Dict, Optional
-import google.generativeai as genai
-from google.generativeai.types import GenerationConfig
-from google.api_core.exceptions import RetryError, GoogleAPIError
+
+try:
+    import google.generativeai as genai
+    from google.generativeai.types import GenerationConfig
+except ImportError:  # Allows deterministic tests and fallback mode without the optional SDK installed.
+    genai = None
+    GenerationConfig = None
 
 import config
 from services.parsers.llm_parser import LLMParser
@@ -16,6 +20,10 @@ class LLMService:
     """
 
     def __init__(self):
+        self.model = None
+        if genai is None or GenerationConfig is None:
+            logger.warning("google-generativeai is not installed. LLMService will use fallbacks.")
+            return
         if not config.GEMINI_API_KEY:
             logger.warning("GEMINI_API_KEY is not set. LLMService will fail.")
             
@@ -42,6 +50,9 @@ class LLMService:
         """
         attempts = 0
         max_attempts = config.LLM_RETRY_COUNT + 1
+
+        if self.model is None:
+            return self._get_fallback(fallback_type)
         
         while attempts < max_attempts:
             try:
@@ -53,7 +64,7 @@ class LLMService:
                     
                 return LLMParser.parse_json(response.text)
                 
-            except (ValueError, GoogleAPIError, RetryError, Exception) as e:
+            except Exception as e:
                 attempts += 1
                 logger.error(f"LLM Generation failed (attempt {attempts}/{max_attempts}): {e}")
                 if attempts >= max_attempts:
@@ -72,8 +83,22 @@ class LLMService:
             return {
                 "summary": "The candidate completed the interview, but detailed AI evaluation was temporarily unavailable.",
                 "strengths": ["Completed the assessment."],
-                "weaknesses": [],
-                "recommendations": ["Review topics independently."],
-                "overall_summary": "System error prevented full AI evaluation."
+                "gaps": ["Detailed feedback could not be generated."],
+                "next": ["Review the evidence collected during the assessment."],
+            }
+        elif fallback_type == "evaluation":
+            return {
+                "accuracy": 0,
+                "reasoning": 0,
+                "depth": 0,
+                "completeness": 0,
+                "communication": 0,
+                "confidence": 0,
+                "strengths": [],
+                "missing_points": ["Automated evaluation was unavailable."],
+                "misconceptions": [],
+                "suggested_followup": None,
+                "topic_mastery": "Low",
+                "interviewer_notes": "No LLM evaluation was available for this answer.",
             }
         return {}

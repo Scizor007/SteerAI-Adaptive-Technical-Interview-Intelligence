@@ -8,7 +8,7 @@ Responsibility:
     on when answers demonstrate sufficient understanding.
 """
 
-from models.schemas import QuestionRecord
+from models.schemas import Difficulty, GeneratedQuestion, QuestionRecord
 from services.llm_service import LLMService
 from services.prompt_builders.followup_prompt import build_followup_prompt
 
@@ -47,7 +47,7 @@ class FollowupGenerator:
         original_question: str,
         candidate_answer: str,
         topic_title: str,
-    ) -> str:
+    ) -> GeneratedQuestion:
         """
         Generate a follow-up question that probes deeper into the topic via Gemini.
 
@@ -67,4 +67,13 @@ class FollowupGenerator:
         
         response_data = self.llm.generate_json(prompt, fallback_type="followup")
         
-        return response_data.get("question", "Could you elaborate further on that?")
+        try:
+            difficulty = Difficulty(str(response_data.get("estimated_difficulty")).lower())
+        except ValueError:
+            difficulty = Difficulty.INTERMEDIATE
+        expected_points = response_data.get("expected_points", [])
+        return GeneratedQuestion(
+            question=str(response_data.get("question") or "Could you elaborate further on that?"),
+            expected_points=[str(item).strip() for item in expected_points] if isinstance(expected_points, list) else [],
+            estimated_difficulty=difficulty,
+        )

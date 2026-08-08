@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime, timezone
 """
 Interview Manager — orchestrator module.
 
@@ -19,6 +20,7 @@ from models.schemas import (
     CandidateProfile,
     InterviewResponse,
     InterviewContext,
+    EvaluationEvidence,
     QuestionRecord,
     Feedback,
 )
@@ -67,7 +69,7 @@ class InterviewManager:
         # Context builder (stateless)
         self.context_builder = InterviewContextBuilder()
 
-        # Future AI modules (stubs for now)
+        # Natural language and answer-evaluation modules
         self.question_generator = QuestionGenerator()
         self.followup_generator = FollowupGenerator()
         self.evaluation_engine = EvaluationEngine()
@@ -110,7 +112,7 @@ class InterviewManager:
         # Step 4: Build context
         context = self.context_builder.build(state)
 
-        # Step 5: Generate first question (stub — future LLM)
+        # Step 5: Generate first question and retain its evaluation rubric
         if not plan.planned_topics:
             state.phase = "complete"
             self.session_manager.update_session(session_id, state)
@@ -120,7 +122,7 @@ class InterviewManager:
             )
 
         first_topic = plan.planned_topics[0]
-        question = self.question_generator.generate(
+        generated_question = self.question_generator.generate(
             topic=first_topic,
             candidate=candidate,
             experience_level=analysis.experience_level.value,
@@ -130,18 +132,19 @@ class InterviewManager:
         # Record the question
         state.questions_asked.append(QuestionRecord(
             topic=first_topic.title,
-            question=question,
-            difficulty=first_topic.difficulty,
+            question=generated_question.question,
+            difficulty=generated_question.estimated_difficulty,
+            expected_points=generated_question.expected_points,
         ))
         state.total_questions = 1
-        state.conversation_history.append({"role": "interviewer", "content": question})
+        state.conversation_history.append({"role": "interviewer", "content": generated_question.question})
         self.session_manager.update_session(session_id, state)
 
         welcome = (
             f"Welcome, {candidate.member.name}. "
             f"I'll be conducting your technical interview today, "
             f"focusing on your experience with the AI curriculum. "
-            f"Let's begin.\n\n{question}"
+            f"Let's begin.\n\n{generated_question.question}"
         )
 
         return InterviewResponse(reply=welcome, done=False)
@@ -158,7 +161,7 @@ class InterviewManager:
         1. Retrieve session
         2. Record candidate's answer
         3. Build context
-        4. Evaluate the response (stub)
+        4. Evaluate the response against its stored rubric
         5. Decide: follow-up, next topic, or end
         6. Generate next question or final feedback (stub)
         """
@@ -172,14 +175,22 @@ class InterviewManager:
         if current_record and current_record.answer is None:
             current_record.answer = message
 
-            # Evaluate the response (stub)
-            score = self.evaluation_engine.evaluate_response(
-                question=current_record.question,
+            context = self.context_builder.build(state)
+            evaluation_result = self.evaluation_engine.evaluate_response(
+                context=context,
+                current_question=current_record,
                 answer=message,
-                topic_title=current_record.topic,
-                experience_level=state.analysis.experience_level.value if state.analysis else "mid",
             )
-            current_record.score = score
+            current_record.score = evaluation_result.overall / 10
+            state.evaluations.append(EvaluationEvidence(
+                question=current_record.question,
+                topic=current_record.topic,
+                candidate_answer=message,
+                expected_points=current_record.expected_points,
+                evaluation_result=evaluation_result,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            ))
+            state.topic_mastery = self.evaluation_engine.calculate_topic_mastery(state.evaluations)
 
         # Build context for decision-making
         context = self.context_builder.build(state)
@@ -192,7 +203,7 @@ class InterviewManager:
         if current_record and self.followup_generator.should_follow_up(
             current_record, MAX_FOLLOWUPS_PER_TOPIC
         ):
-            followup = self.followup_generator.generate(
+            generated_followup = self.followup_generator.generate(
                 original_question=current_record.question,
                 candidate_answer=message,
                 topic_title=current_record.topic,
@@ -200,13 +211,15 @@ class InterviewManager:
             current_record.followup_count += 1
             state.questions_asked.append(QuestionRecord(
                 topic=current_record.topic,
-                question=followup,
+                question=generated_followup.question,
+                difficulty=generated_followup.estimated_difficulty,
+                expected_points=generated_followup.expected_points,
             ))
             state.total_questions += 1
             state.phase = "asking"
-            state.conversation_history.append({"role": "interviewer", "content": followup})
+            state.conversation_history.append({"role": "interviewer", "content": generated_followup.question})
             self.session_manager.update_session(session_id, state)
-            return InterviewResponse(reply=followup, done=False)
+            return InterviewResponse(reply=generated_followup.question, done=False)
 
         # Move to next topic
         state.current_topic_index += 1
@@ -220,7 +233,7 @@ class InterviewManager:
 
         asked_questions = [q.question for q in state.questions_asked]
 
-        question = self.question_generator.generate(
+        generated_question = self.question_generator.generate(
             topic=next_topic,
             candidate=state.candidate,
             experience_level=state.analysis.experience_level.value if state.analysis else "mid",
@@ -229,39 +242,27 @@ class InterviewManager:
 
         state.questions_asked.append(QuestionRecord(
             topic=next_topic.title,
-            question=question,
-            difficulty=next_topic.difficulty,
+            question=generated_question.question,
+            difficulty=generated_question.estimated_difficulty,
+            expected_points=generated_question.expected_points,
         ))
         state.total_questions += 1
         state.phase = "asking"
-        state.conversation_history.append({"role": "interviewer", "content": question})
+        state.conversation_history.append({"role": "interviewer", "content": generated_question.question})
         self.session_manager.update_session(session_id, state)
 
-        return InterviewResponse(reply=question, done=False)
+        return InterviewResponse(reply=generated_question.question, done=False)
 
     def _end_interview(self, session_id: str, state) -> InterviewResponse:
         """Generate feedback and complete the interview."""
         state.phase = "complete"
 
-        topic_scores = self.evaluation_engine.calculate_topic_score(state.questions_asked)
-        overall_score = self.evaluation_engine.calculate_overall_score(state.questions_asked)
-
-        # Build legacy topic_plan for backward compat with feedback generator
-        from models.schemas import TopicPlan
-        legacy_plan = []
-        if state.plan:
-            for t in state.plan.planned_topics:
-                legacy_plan.append(TopicPlan(
-                    day=t.day, title=t.title, module=t.module_name,
-                    priority=t.priority.value, reason=t.reason,
-                ))
+        score_summary = self.evaluation_engine.calculate_score_summary(state.evaluations)
 
         feedback = self.feedback_generator.generate(
-            candidate=state.candidate,
-            questions=state.questions_asked,
-            topic_plan=legacy_plan,
-            topic_scores=topic_scores,
-            overall_score=overall_score,
+            evaluations=state.evaluations,
+            topic_mastery=state.topic_mastery,
+            score_summary=score_summary,
         )
 
         self.session_manager.update_session(session_id, state)

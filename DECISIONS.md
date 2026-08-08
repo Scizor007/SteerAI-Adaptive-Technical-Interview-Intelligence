@@ -90,3 +90,13 @@
 - **Chosen option**: Create a dedicated `LLMService`, `LLMParser`, and `prompt_builders` layer.
 - **Reason**: Decoupling the API communication (retries, timeouts) and prompt construction from the generators (`QuestionGenerator`, etc.) adheres to the single responsibility principle. It also centralizes JSON parsing and error recovery (fallbacks).
 - **Impact**: Added `google-generativeai` dependency. Prompts are constructed purely from the deterministic `InterviewContext` and returned JSON is robustly parsed to avoid crashing the interview workflow.
+
+---
+
+## DEC-010: Evidence-Based Interview Evaluation
+
+- **Timestamp**: 2026-08-08
+- **Problem**: The previous interview score used answer-length heuristics and could not prove that final feedback reflected submitted answers.
+- **Chosen option**: Gemini evaluates one answer at a time against the stored question rubric; the backend validates dimensions, retains immutable evidence, and calculates all mastery and aggregate scores deterministically.
+- **Reason**: This preserves Gemini as a constrained evaluator while keeping scoring, session state, normalization, coverage, and consistency decisions testable and explainable.
+- **Impact**: Sessions now retain `evaluations[]` and `topic_mastery`; final feedback receives only interview evidence plus deterministic score summaries. Candidate profile completion is excluded from final score calculation.

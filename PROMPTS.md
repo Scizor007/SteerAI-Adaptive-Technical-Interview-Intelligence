@@ -60,3 +60,12 @@
 - **Goal**: Integrate Gemini into the existing backend architecture.
 - **Prompt**: "Integrate Gemini into the existing backend architecture. Gemini should ONLY generate natural language. The deterministic backend remains responsible for candidate analysis, interview planning, etc. Create a dedicated AI layer... LLMService, Prompt Builders, Output Parser... Do NOT implement RAG, LangChain, etc. Keep implementation lightweight."
 - **Result**: Implemented a dedicated AI Layer using `google-generativeai`. Created `LLMService` to handle retries and config, `LLMParser` for robust JSON parsing with fallbacks, and strict Prompt Builders (`question_prompt`, `followup_prompt`, `feedback_prompt`). Refactored `QuestionGenerator`, `FollowupGenerator`, and `FeedbackGenerator` to use Gemini. Added lightweight tests in `test_llm.py` and updated `_smoke_test.py` to use dynamic session IDs. Verified successful backend compilation and E2E interview functionality.
+
+---
+
+## PROMPT-007
+
+- **Prompt ID**: PROMPT-007
+- **Timestamp**: 2026-08-08
+- **Goal**: Implement real, evidence-based answer evaluation and connect the Feedback page to backend report data.
+- **Result**: Added a constrained evaluation prompt, validated `EvaluationResult` schema, immutable session evaluation history, per-topic mastery, and deterministic weighted 0–100 scoring with coverage and consistency bonuses. Refactored final feedback to use interview evidence only. Replaced the frontend mock interview/report flow with the API-backed flow. Added tests for excellent, average, poor, empty, off-topic, and complete strong-vs-poor interviews.

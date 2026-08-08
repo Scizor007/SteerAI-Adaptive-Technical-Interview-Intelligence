@@ -6,8 +6,7 @@
 
 ## Todo
 
-- [ ] Integrate LLM for response evaluation (EvaluationEngine)
-- [ ] End-to-end integration testing
+- [ ] Live Gemini API acceptance test (requires configured credentials)
 
 ## In Progress
 
@@ -16,6 +15,10 @@
 - [x] Integrate LLM for question generation (QuestionGenerator)
 - [x] Integrate LLM for follow-up generation (FollowupGenerator)
 - [x] Integrate LLM for feedback synthesis (FeedbackGenerator)
+- [x] Integrate LLM for response evaluation (EvaluationEngine)
+- [x] Persist evaluation evidence and topic mastery in session state
+- [x] Wire evidence-based backend feedback to Feedback page
+- [x] Verify strong and poor complete interviews produce significantly different scores
 - [x] Complete UI Redesign (SteerAI)
 - [x] Build Landing page
 - [x] Build Candidate Selection page

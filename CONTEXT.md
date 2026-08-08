@@ -28,12 +28,13 @@ POST /api/interview
   ├── Curriculum Loader     → parses and indexes curriculum.json
   ├── Candidate Analyzer    → extracts strengths/weaknesses/gaps (deterministic)
   ├── Interview Planner     → builds prioritized topic list (deterministic)
-  ├── Session Manager       → in-memory dict keyed by sessionId
+  ├── Session Manager       → stores questions, evaluation evidence, and topic mastery
   ├── Interview Context Builder → merges session state for LLM consumption
   ├── Question Generator    → produces adaptive questions (stub)
   ├── Follow-up Generator   → probes deeper based on response quality (stub)
-  ├── Evaluation Engine     → scores responses, tracks performance (stub)
-  └── Feedback Generator    → produces summary/strengths/gaps/next (stub)
+  ├── Evaluation Prompt Builder → prepares a single-answer evidence rubric for Gemini
+  ├── Evaluation Engine     → validates 0–10 rubric dimensions and calculates 0–100 aggregates
+  └── Feedback Generator    → synthesizes final feedback only from recorded interview evidence
 ```
 
 ### Frontend Architecture
@@ -149,7 +150,8 @@ End:      (automatic)                    → { reply, done: true, feedback }
 candidates.json → Candidate Analyzer → Interview Planner
 curriculum.json → Interview Planner → Question Generator
                                     → Follow-up Generator
-candidate answer → Evaluation Engine → Feedback Generator → API Response
+candidate answer → Evaluation Prompt → Gemini JSON → Evaluation Engine
+                 → Session evaluations[] + topic mastery → Feedback Generator → API Response
 ```
 
 ---
@@ -168,14 +170,16 @@ candidate answer → Evaluation Engine → Feedback Generator → API Response
 - [x] LLM integration for question generation (Backend)
 - [x] LLM integration for follow-up generation (Backend)
 - [x] LLM integration for feedback synthesis (Backend)
+- [x] Evidence-based LLM response evaluation (Backend)
+- [x] Session evaluation history and per-topic mastery tracking
+- [x] Evidence-based feedback metrics wired to the Feedback page
 
 ## Pending Features
 
-- [ ] LLM integration for response evaluation (Backend) - *Next step*
-- [ ] E2E Testing
+- [ ] Live Gemini API acceptance test (requires configured credentials)
 
 ## Current Sprint
 
-**Sprint 2 — LLM Integration & Backend Logic** (Ongoing)
+**Sprint 2 — LLM Integration & Backend Logic** (Complete)
 
 ---

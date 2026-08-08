@@ -53,6 +53,16 @@ export interface Feedback {
   strengths: string[];
   gaps: string[];
   next: string[];
+  overall_score: number;
+  accuracy: number;
+  reasoning: number;
+  depth: number;
+  completeness: number;
+  communication: number;
+  confidence: number;
+  topic_mastery: Record<string, number>;
+  evidence: string[];
+  interviewer_notes: string[];
 }
 
 export interface InterviewResponse {

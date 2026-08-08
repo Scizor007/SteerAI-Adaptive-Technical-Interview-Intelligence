@@ -1,64 +1,94 @@
-import { useState, useCallback } from 'react';
-import type { CandidateProfile, InterviewPhase } from '../types';
+import { useCallback, useEffect, useState } from 'react';
 
-/** UI-only interview state — no backend logic wired. */
+import { continueInterview, startInterview } from '../api/interviewApi';
+import type { CandidateProfile, Feedback, InterviewPhase } from '../types';
+
+const TOTAL_QUESTIONS = 10;
+
+function createSessionId(): string {
+  return `interview-${crypto.randomUUID()}`;
+}
+
+function questionFromReply(reply: string): string {
+  return reply.split('\n\n').filter(Boolean).pop() ?? reply;
+}
+
+/** UI state that delegates interview progression and scoring to the backend API. */
 export function useInterviewUI(candidate: CandidateProfile | null) {
-  const [phase, setPhase] = useState<InterviewPhase>('asking');
+  const [phase, setPhase] = useState<InterviewPhase>('initializing');
   const [answer, setAnswer] = useState('');
+  const [question, setQuestion] = useState('');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>();
+  const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState('');
 
-  const MOCK_QUESTIONS = [
-    {
-      topic: 'RAG Architecture',
-      question:
-        'Walk me through how you would design a retrieval-augmented generation pipeline for a document Q&A system. What components would you include and why?',
-      followUp: 'How would you handle chunking strategy for mixed-format documents?',
-    },
-    {
-      topic: 'Vector Databases',
-      question:
-        'Compare dense vs. sparse retrieval approaches. When would you choose one over the other in production?',
-      followUp: null,
-    },
-    {
-      topic: 'Agent Orchestration',
-      question:
-        'Describe a multi-agent workflow you have built or would build. How do agents coordinate and handle failures?',
-      followUp: 'What observability would you add before shipping to production?',
-    },
-  ];
+  useEffect(() => {
+    if (!candidate) return;
 
-  const current = MOCK_QUESTIONS[questionIndex] ?? MOCK_QUESTIONS[0];
+    let active = true;
+    const id = createSessionId();
+    setSessionId(id);
+    setPhase('initializing');
+    setQuestionIndex(0);
+    setQuestion('');
+    setFeedback(undefined);
+    setError(null);
 
-  const submitAnswer = useCallback(() => {
-    if (!answer.trim()) return;
+    startInterview(id, candidate)
+      .then((response) => {
+        if (!active) return;
+        setQuestion(questionFromReply(response.reply));
+        setPhase(response.done ? 'complete' : 'asking');
+        setFeedback(response.feedback);
+      })
+      .catch((requestError: unknown) => {
+        if (!active) return;
+        setError(requestError instanceof Error ? requestError.message : 'Unable to start the interview.');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [candidate]);
+
+  const submitAnswer = useCallback(async () => {
+    if (!answer.trim() || !sessionId || isEvaluating) return;
+
     setPhase('evaluating');
     setIsEvaluating(true);
-    setTimeout(() => {
-      setIsEvaluating(false);
-      if (questionIndex < MOCK_QUESTIONS.length - 1) {
-        setQuestionIndex((i) => i + 1);
-        setAnswer('');
-        setPhase('asking');
-      } else {
+    setError(null);
+    try {
+      const response = await continueInterview(sessionId, answer.trim());
+      setQuestionIndex((index) => index + 1);
+      setAnswer('');
+      setFeedback(response.feedback);
+      if (response.done) {
         setPhase('complete');
+      } else {
+        setQuestion(response.reply);
+        setPhase('asking');
       }
-    }, 1800);
-  }, [answer, questionIndex]);
+    } catch (requestError: unknown) {
+      setPhase('asking');
+      setError(requestError instanceof Error ? requestError.message : 'Unable to evaluate the answer.');
+    } finally {
+      setIsEvaluating(false);
+    }
+  }, [answer, isEvaluating, sessionId]);
 
   return {
     phase,
     answer,
     setAnswer,
     questionIndex,
-    totalQuestions: MOCK_QUESTIONS.length,
-    currentQuestion: current,
+    totalQuestions: TOTAL_QUESTIONS,
+    currentQuestion: { topic: 'Current assessment topic', question },
     isEvaluating,
     submitAnswer,
     candidate,
-    coveragePct: candidate
-      ? Math.round((candidate.signals.missionsCompleted / 31) * 100)
-      : 0,
+    feedback,
+    error,
   };
 }

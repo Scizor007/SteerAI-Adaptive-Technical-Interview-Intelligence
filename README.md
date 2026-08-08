@@ -19,6 +19,8 @@ Interview Manager (orchestrator)
 └── Session Manager       — In-memory state management
 ```
 
+Every submitted answer is evaluated independently against the question's retained rubric. The session stores immutable evaluation evidence, topic mastery, and accumulated 0–100 score dimensions; final feedback is synthesized only from that interview evidence.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -78,6 +80,9 @@ ABTalks/
 │   │   ├── evaluation_engine.py    # Response scoring
 │   │   ├── feedback_generator.py   # Final feedback
 │   │   └── session_manager.py      # Session state
+│   ├── services/
+│   │   ├── llm_service.py          # Gemini communication and fallbacks
+│   │   └── prompt_builders/        # Question, follow-up, evaluation, feedback prompts
 │   └── data/
 │       ├── curriculum.json
 │       └── candidates.json

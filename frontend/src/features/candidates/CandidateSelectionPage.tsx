@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Users } from 'lucide-react';
 import { AppLayout } from '../../layouts';
 import { useCandidates } from '../../hooks';
 import { ErrorState, EmptyState, SkeletonCard } from '../../components/ui';

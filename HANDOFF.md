@@ -6,35 +6,33 @@
 
 ## Current Task
 
-**Complete.** The Gemini LLM integration has been successfully completed. We added `LLMService`, `LLMParser`, and `prompt_builders`. `QuestionGenerator`, `FollowupGenerator`, and `FeedbackGenerator` now successfully call Gemini to generate dynamic natural language responses while maintaining structured JSON contracts.
+**Complete.** The real Evaluation Engine is implemented. Every answer is independently evaluated by Gemini against the stored question rubric, normalized by backend rules, appended to session evidence, and used to calculate topic mastery plus the final 0–100 report score.
 
 ## Next Phase
 
-**LLM Integration (Response Evaluation).** The core pipeline now correctly outputs natural language questions and follow-ups. The next step is to replace the `EvaluationEngine` stub to accurately score candidate answers using the LLM.
+**Adaptive interview logic.** `EvaluationResult` now exposes `needs_followup`, `difficulty_recommendation`, and `knowledge_gap`; the next milestone may consume these signals to adapt interview progression.
 
 ## Current Blocker
 
-None. The backend passes all smoke tests and runs successfully with Gemini integrated.
+The repository virtual environment references a missing Python 3.11 executable. Backend compilation and tests pass with the bundled workspace Python; restore or recreate `backend/.venv` before running the local FastAPI server.
 
 ## Next AI Instruction
 
-1. Open `backend/modules/evaluation_engine.py`.
-2. Integrate `LLMService` to score candidate answers (0.0 to 1.0) based on the provided expected points.
-3. Keep the deterministic math for calculating `overall_score` (average of all questions) but use Gemini to evaluate individual answers.
-4. Run `_smoke_test.py` to ensure the session progresses without crashing and the score reflects actual performance.
+1. Consume `EvaluationResult.needs_followup`, `difficulty_recommendation`, and `knowledge_gap` in a dedicated adaptive-planning pass.
+2. Recreate `backend/.venv`, install backend dependencies, and run a live Gemini API acceptance test.
+3. Keep feedback grounded in `state.evaluations` and `state.topic_mastery`; never use candidate completion signals in the final score.
 
 ## Last Modified Files
 
 | File | Change |
 |------|--------|
-| `backend/config.py` & `.env` | Added Gemini configurations. |
-| `backend/services/llm_service.py` | Added Gemini communication layer. |
-| `backend/services/parsers/llm_parser.py` | Added JSON parsing and fallback layer. |
-| `backend/services/prompt_builders/*` | Added prompts for questions, follow-ups, and feedback. |
-| `backend/modules/question_generator.py` | Refactored to use `LLMService`. |
-| `backend/modules/followup_generator.py` | Refactored to use `LLMService`. |
-| `backend/modules/feedback_generator.py` | Refactored to use `LLMService`. |
-| `backend/test_llm.py` | Added lightweight parser and prompt builder tests. |
-| `backend/_smoke_test.py` | Made session_id dynamic (UUID). |
+| `backend/services/prompt_builders/evaluation_prompt.py` | New constrained per-answer evaluation prompt. |
+| `backend/modules/evaluation_engine.py` | Gemini JSON validation, weighted evaluation, mastery, and aggregate score calculation. |
+| `backend/models/schemas.py` | Added evaluation evidence, result, and score-summary schemas. |
+| `backend/modules/interview_manager.py` | Stores every answer evaluation and builds reports from evidence. |
+| `backend/modules/feedback_generator.py` | Returns backend-computed metric dimensions and evidence-only report data. |
+| `frontend/src/hooks/useInterviewUI.ts` | Uses the real interview API instead of mock questions. |
+| `frontend/src/features/feedback/FeedbackPage.tsx` | Displays backend report metrics and topic mastery. |
+| `backend/test_evaluation_engine.py` | Covers excellent, average, poor, empty, off-topic, and complete interview score separation. |
 
 ---

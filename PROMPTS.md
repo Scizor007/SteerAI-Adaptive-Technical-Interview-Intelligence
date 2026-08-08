@@ -69,3 +69,12 @@
 - **Timestamp**: 2026-08-08
 - **Goal**: Implement real, evidence-based answer evaluation and connect the Feedback page to backend report data.
 - **Result**: Added a constrained evaluation prompt, validated `EvaluationResult` schema, immutable session evaluation history, per-topic mastery, and deterministic weighted 0–100 scoring with coverage and consistency bonuses. Refactored final feedback to use interview evidence only. Replaced the frontend mock interview/report flow with the API-backed flow. Added tests for excellent, average, poor, empty, off-topic, and complete strong-vs-poor interviews.
+
+---
+
+## PROMPT-008
+
+- **Prompt ID**: PROMPT-008
+- **Timestamp**: 2026-08-08
+- **Goal**: Implement OpenRouter as the primary LLM provider without changing the interview architecture.
+- **Result**: Created an `LLMProvider` abstraction. Implemented `OpenRouterProvider` (REST) and `GeminiProvider` (SDK). Refactored `LLMService` to route to providers based on `.env` settings while preserving all central retry, parsing, and fallback logic. Business logic, prompts, and schemas remained entirely untouched.

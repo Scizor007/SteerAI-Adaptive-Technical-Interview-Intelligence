@@ -6,11 +6,14 @@
 
 ## Todo
 
-- [ ] Live Gemini API acceptance test (requires configured credentials)
+- [ ] Complete Adaptive Planning Pass
 
 ## In Progress
 
 ## Done
+
+- [x] Live LLM API acceptance test (OpenRouter/Gemini)
+- [x] Implement OpenRouter LLM Provider Abstraction
 
 - [x] Integrate LLM for question generation (QuestionGenerator)
 - [x] Integrate LLM for follow-up generation (FollowupGenerator)

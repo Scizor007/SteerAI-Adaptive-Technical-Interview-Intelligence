@@ -65,7 +65,7 @@ class FollowupGenerator:
             topic_title=topic_title
         )
         
-        response_data = self.llm.generate_json(prompt, fallback_type="followup")
+        response_data = self.llm.generate_json(prompt, fallback_type="followup", caller_module="FollowupGenerator")
         
         try:
             difficulty = Difficulty(str(response_data.get("estimated_difficulty")).lower())

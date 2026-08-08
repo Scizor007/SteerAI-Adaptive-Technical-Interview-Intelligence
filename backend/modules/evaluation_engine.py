@@ -46,7 +46,11 @@ class EvaluationEngine:
         answer: str,
     ) -> EvaluationResult:
         """Evaluate one answer independently and normalize the structured LLM output."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if not answer or not answer.strip():
+            logger.info("Empty answer submitted - returning zero score")
             return EvaluationResult(
                 missing_points=["No answer was submitted."],
                 interviewer_notes="The candidate submitted an empty response.",
@@ -62,8 +66,16 @@ class EvaluationEngine:
             candidate_answer=answer,
             previous_evaluations=context.evaluations,
         )
-        response = self.llm.generate_json(prompt, fallback_type="evaluation")
-        return self._normalize_result(response)
+        
+        response = self.llm.generate_json(prompt, fallback_type="evaluation", caller_module="EvaluationEngine")
+        
+        # Detect fallback
+        if response.get("_fallback"):
+            logger.error("[FALLBACK] EVALUATION FALLBACK DETECTED - LLM unavailable, returning zero score")
+        
+        result = self._normalize_result(response)
+        
+        return result
 
     def _normalize_result(self, response: Dict[str, Any]) -> EvaluationResult:
         """Validate untrusted LLM JSON and compute the weighted per-answer score."""

@@ -54,8 +54,8 @@
   1. Keep current dark mode and just add better components.
   2. Complete overhaul to mirror premium products like Linear, Stripe, and Vercel.
 - **Chosen option**: Option 2 — Complete overhaul.
-- **Reason**: To make a strong impression ("stop scrolling and think this is a real startup"), the UI must avoid ChatGPT clones entirely. 
-- **Impact**: 
+- **Reason**: To make a strong impression ("stop scrolling and think this is a real startup"), the UI must avoid ChatGPT clones entirely.
+- **Impact**:
   - The project is now named **SteerAI**.
   - Replaced the standard chat interface with an **Interview Workspace** featuring a 3-pane layout (Progress, Question Stage, Live Evaluation).
   - Adopted a strict 8-color system, Plus Jakarta Sans, Inter, and IBM Plex Mono.
@@ -100,3 +100,16 @@
 - **Chosen option**: Gemini evaluates one answer at a time against the stored question rubric; the backend validates dimensions, retains immutable evidence, and calculates all mastery and aggregate scores deterministically.
 - **Reason**: This preserves Gemini as a constrained evaluator while keeping scoring, session state, normalization, coverage, and consistency decisions testable and explainable.
 - **Impact**: Sessions now retain `evaluations[]` and `topic_mastery`; final feedback receives only interview evidence plus deterministic score summaries. Candidate profile completion is excluded from final score calculation.
+
+---
+
+## DEC-011: Evaluation Pipeline Diagnosis and Fallback Improvements
+
+- **Timestamp**: 2026-08-08
+- **Problem**: Live behavior indicated evaluation engine not correctly influencing interviews: incorrect answers produced scores, generic follow-ups appeared, and "evaluation temporarily unavailable" messages showed in feedback.
+- **Investigation**: Complete runtime trace with comprehensive logging from question generation through evaluation, session storage, and feedback generation.
+- **Root Cause**: Gemini API free-tier quota exceeded (429 error). All LLM calls (question, evaluation, follow-up, feedback) fell back to default responses with zero scores and generic content.
+- **Verification**: Pipeline architecture is correct - prompts include exact candidate answers, expected points are passed correctly, session storage works, and context flows through all modules. The issue is purely LLM service unavailability.
+- **Chosen option**: Enhanced fallback detection with `_fallback` flags, added validation warnings for empty expected_points, improved error logging to surface quota issues clearly.
+- **Impact**: System now clearly indicates when operating in degraded mode. Production requires paid API tier. Added validation that questions should never generate without evaluation rubrics.
+- **Related Documents**: `docs/dev-notes/EVALUATION_DIAGNOSIS.md`, `docs/archive/EVALUATION_FIX_SUMMARY.md`

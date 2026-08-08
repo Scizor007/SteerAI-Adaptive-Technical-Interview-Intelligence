@@ -39,6 +39,9 @@ class QuestionGenerator:
         Returns:
             A question string to present to the candidate.
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # Build prompt
         prompt = build_question_prompt(
             topic=topic,
@@ -48,12 +51,18 @@ class QuestionGenerator:
         )
         
         # Generate and parse JSON via LLMService
-        response_data = self.llm.generate_json(prompt, fallback_type="question")
+        response_data = self.llm.generate_json(prompt, fallback_type="question", caller_module="QuestionGenerator")
+        
+        # Validate that we got meaningful data, not a fallback
+        expected_points = self._string_list(response_data.get("expected_points"))
+        if not expected_points:
+            logger.warning(f"[VALIDATION] Question generated without expected_points for topic: {topic.title}")
+            logger.warning("[VALIDATION] This may indicate LLM fallback or poor prompt response")
         
         difficulty = self._parse_difficulty(response_data.get("estimated_difficulty"), topic.difficulty)
         return GeneratedQuestion(
             question=str(response_data.get("question") or "Could you explain your understanding of this topic?"),
-            expected_points=self._string_list(response_data.get("expected_points")),
+            expected_points=expected_points,
             estimated_difficulty=difficulty,
         )
 

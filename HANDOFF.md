@@ -6,7 +6,7 @@
 
 ## Current Task
 
-**Complete.** The real Evaluation Engine is implemented. Every answer is independently evaluated by Gemini against the stored question rubric, normalized by backend rules, appended to session evidence, and used to calculate topic mastery plus the final 0–100 report score.
+**Complete.** The LLM provider abstraction has been implemented. `LLMService` now routes requests to either `OpenRouterProvider` or `GeminiProvider` based on environment variables, leaving all business logic and prompts identical. OpenRouter via REST API is active.
 
 ## Next Phase
 
@@ -19,20 +19,16 @@ The repository virtual environment references a missing Python 3.11 executable. 
 ## Next AI Instruction
 
 1. Consume `EvaluationResult.needs_followup`, `difficulty_recommendation`, and `knowledge_gap` in a dedicated adaptive-planning pass.
-2. Recreate `backend/.venv`, install backend dependencies, and run a live Gemini API acceptance test.
-3. Keep feedback grounded in `state.evaluations` and `state.topic_mastery`; never use candidate completion signals in the final score.
+2. Keep feedback grounded in `state.evaluations` and `state.topic_mastery`; never use candidate completion signals in the final score.
 
 ## Last Modified Files
 
 | File | Change |
 |------|--------|
-| `backend/services/prompt_builders/evaluation_prompt.py` | New constrained per-answer evaluation prompt. |
-| `backend/modules/evaluation_engine.py` | Gemini JSON validation, weighted evaluation, mastery, and aggregate score calculation. |
-| `backend/models/schemas.py` | Added evaluation evidence, result, and score-summary schemas. |
-| `backend/modules/interview_manager.py` | Stores every answer evaluation and builds reports from evidence. |
-| `backend/modules/feedback_generator.py` | Returns backend-computed metric dimensions and evidence-only report data. |
-| `frontend/src/hooks/useInterviewUI.ts` | Uses the real interview API instead of mock questions. |
-| `frontend/src/features/feedback/FeedbackPage.tsx` | Displays backend report metrics and topic mastery. |
-| `backend/test_evaluation_engine.py` | Covers excellent, average, poor, empty, off-topic, and complete interview score separation. |
+| `backend/config.py` | Added LLM_PROVIDER, OPENROUTER_API_KEY, and OPENROUTER_MODEL. |
+| `backend/services/llm/provider.py` | New `LLMProvider` abstract base class. |
+| `backend/services/llm/openrouter_provider.py` | New OpenRouter REST API implementation. |
+| `backend/services/llm/gemini_provider.py` | Encapsulated Gemini SDK implementation. |
+| `backend/services/llm_service.py` | Refactored to delegate to provider while keeping parsing and fallbacks intact. |
 
 ---

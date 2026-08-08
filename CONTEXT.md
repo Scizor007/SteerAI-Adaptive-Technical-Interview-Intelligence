@@ -32,9 +32,10 @@ POST /api/interview
   ├── Interview Context Builder → merges session state for LLM consumption
   ├── Question Generator    → produces adaptive questions (stub)
   ├── Follow-up Generator   → probes deeper based on response quality (stub)
-  ├── Evaluation Prompt Builder → prepares a single-answer evidence rubric for Gemini
-  ├── Evaluation Engine     → validates 0–10 rubric dimensions and calculates 0–100 aggregates
-  └── Feedback Generator    → synthesizes final feedback only from recorded interview evidence
+  ├── Evaluation Prompt Builder → prepares a single-answer evidence rubric
+  ├── Evaluation Engine     → validates 0–10 rubric dimensions and calculates aggregates
+  ├── Feedback Generator    → synthesizes final feedback only from recorded interview evidence
+  └── LLM Provider Layer    → LLMService routes to OpenRouterProvider or GeminiProvider
 ```
 
 ### Frontend Architecture
@@ -60,79 +61,82 @@ src/
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Frontend | React | 19.x |
-| Build | Vite | 5.x |
-| Language | TypeScript | strict |
-| Styling | TailwindCSS | 4.x |
-| Animation | Framer Motion | 13.x |
-| Backend | FastAPI | 0.103.x |
-| Backend Lang | Python | 3.11+ |
-| Validation | Pydantic | 2.5.x |
-| State | In-memory (dict) | — |
+| Layer        | Technology       | Version |
+| ------------ | ---------------- | ------- |
+| Frontend     | React            | 19.x    |
+| Build        | Vite             | 5.x     |
+| Language     | TypeScript       | strict  |
+| Styling      | TailwindCSS      | 4.x     |
+| Animation    | Framer Motion    | 13.x    |
+| Backend      | FastAPI          | 0.103.x |
+| Backend Lang | Python           | 3.11+   |
+| Validation   | Pydantic         | 2.5.x   |
+| State        | In-memory (dict) | —       |
 
 ---
 
 ## Design System: SteerAI
 
 ### Visual Identity
+
 - **Personality:** Premium, Intelligent, Calm, Confident, Technical, Human, Modern.
 - **Inspiration:** Linear, Stripe, Raycast, Notion, Vercel.
 - **Traits:** Lots of whitespace, large typography, strong hierarchy, subtle shadows, rounded corners, intentional motion.
 
 ### Color Tokens (Strict 8-Color System)
 
-| Token | Hex | Role |
-|-------|-----|------|
-| `--bg-primary` | `#09090B` | Deep rich black |
-| `--bg-secondary`| `#111114` | Subtle elevation |
-| `--surface` | `#1A1A1F` | Cards and distinct blocks |
-| `--text-primary`| `#F4F4F5` | High contrast text |
-| `--text-secondary`|`#8B8B95` | Muted metadata |
-| `--border` | `#2A2A30` | Subtle structural lines |
-| `--accent` | `#5E6AD2` | Premium Indigo/Blurple |
-| `--signal` | `#22C55E` | Success/Live state emerald |
+| Token              | Hex       | Role                       |
+| ------------------ | --------- | -------------------------- |
+| `--bg-primary`     | `#09090B` | Deep rich black            |
+| `--bg-secondary`   | `#111114` | Subtle elevation           |
+| `--surface`        | `#1A1A1F` | Cards and distinct blocks  |
+| `--text-primary`   | `#F4F4F5` | High contrast text         |
+| `--text-secondary` | `#8B8B95` | Muted metadata             |
+| `--border`         | `#2A2A30` | Subtle structural lines    |
+| `--accent`         | `#5E6AD2` | Premium Indigo/Blurple     |
+| `--signal`         | `#22C55E` | Success/Live state emerald |
 
 ### Typography
 
-| Face | Font | Role |
-|------|------|------|
-| Display | Plus Jakarta Sans | Headings, signaling a premium tech product |
-| Body | Inter | Clean, neutral UI text |
-| Mono | IBM Plex Mono | Technical data, session IDs, assessment stats |
+| Face    | Font              | Role                                          |
+| ------- | ----------------- | --------------------------------------------- |
+| Display | Plus Jakarta Sans | Headings, signaling a premium tech product    |
+| Body    | Inter             | Clean, neutral UI text                        |
+| Mono    | IBM Plex Mono     | Technical data, session IDs, assessment stats |
 
 ### Layout Concepts
 
-| Page | Concept |
-|------|---------|
-| Landing | Centered hero with animated background and simplified typography. Architecture pushed down. |
-| Candidate Selection | Premium profile cards (Photo, Name, Role, Completion %, Key Strength) with high whitespace. |
-| Interview | **Total Focus Mode:** Massive centered question text. Left sidebar is collapsible. Immersive AI transitions between questions. |
-| Feedback Report | Professional assessment report featuring a massive hero score, minimal borders, and strong visual hierarchy. |
-| Architecture | Interactive topology diagram with module cards and flow animations. |
+| Page                | Concept                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Landing             | Centered hero with animated background and simplified typography. Architecture pushed down.                                    |
+| Candidate Selection | Premium profile cards (Photo, Name, Role, Completion %, Key Strength) with high whitespace.                                    |
+| Interview           | **Total Focus Mode:** Massive centered question text. Left sidebar is collapsible. Immersive AI transitions between questions. |
+| Feedback Report     | Professional assessment report featuring a massive hero score, minimal borders, and strong visual hierarchy.                   |
+| Architecture        | Interactive topology diagram with module cards and flow animations.                                                            |
 
 ---
 
 ## Development Tooling
 
 ### Breeth MCP
+
 **Purpose**: Developer memory only.
 
 **Usage**:
+
 - Architecture summaries
 - Milestone summaries
 - Bug summaries
 - Next-step handoffs
 
-*Note: Breeth MCP is not used by the application runtime.*
+_Note: Breeth MCP is not used by the application runtime._
 
 ## API Endpoints
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/interview` | Start / continue / end interview |
-| GET | `/health` | Health check |
+| Method | Path             | Purpose                          |
+| ------ | ---------------- | -------------------------------- |
+| POST   | `/api/interview` | Start / continue / end interview |
+| GET    | `/health`        | Health check                     |
 
 ### Request/Response Flow
 
@@ -150,7 +154,7 @@ End:      (automatic)                    → { reply, done: true, feedback }
 candidates.json → Candidate Analyzer → Interview Planner
 curriculum.json → Interview Planner → Question Generator
                                     → Follow-up Generator
-candidate answer → Evaluation Prompt → Gemini JSON → Evaluation Engine
+candidate answer → Evaluation Prompt → LLMProvider (OpenRouter/Gemini) → JSON → Evaluation Engine
                  → Session evaluations[] + topic mastery → Feedback Generator → API Response
 ```
 
@@ -173,10 +177,17 @@ candidate answer → Evaluation Prompt → Gemini JSON → Evaluation Engine
 - [x] Evidence-based LLM response evaluation (Backend)
 - [x] Session evaluation history and per-topic mastery tracking
 - [x] Evidence-based feedback metrics wired to the Feedback page
+- [x] Session evaluation history and per-topic mastery tracking
+- [x] Evidence-based feedback metrics wired to the Feedback page
+- [x] **Evaluation pipeline traced, verified, and documented**
+- [x] **LLM Provider Abstraction** (OpenRouter + Gemini support)
 
-## Pending Features
+- [ ] Live Gemini API acceptance test with paid/upgraded API key
 
-- [ ] Live Gemini API acceptance test (requires configured credentials)
+## Known Issues
+
+- ⚠️ **Gemini API Free Tier Limitation**: The free tier allows only 20 requests/day per model, which causes all LLM calls to fall back to default responses when quota is exceeded. Production deployment requires a paid API key.
+- ⚠️ **Fallback Detection**: System includes fallback responses to prevent crashes, but these provide zero evaluation scores and generic questions. Enhanced logging and fallback flags help detect when this occurs.
 
 ## Current Sprint
 

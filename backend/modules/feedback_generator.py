@@ -47,7 +47,7 @@ class FeedbackGenerator:
             score_summary=score_summary,
         )
         
-        response_data = self.llm.generate_json(prompt, fallback_type="feedback")
+        response_data = self.llm.generate_json(prompt, fallback_type="feedback", caller_module="FeedbackGenerator")
         
         return Feedback(
             summary=response_data.get("summary", "Interview completed."),

@@ -11,6 +11,7 @@
 ## Commit Details
 
 **Message:**
+
 ```
 fix: improve interview flow and fallback handling
 
@@ -29,6 +30,7 @@ fix: improve interview flow and fallback handling
 ## What Was Fixed
 
 ### Core Interview Flow Issues
+
 1. ✅ **Duplicate Question Prevention**
    - Added normalized comparison logic
    - Checks against previously asked questions
@@ -62,6 +64,7 @@ fix: improve interview flow and fallback handling
 ## Files Modified
 
 ### Core Modules
+
 - `backend/services/llm_service.py` - Startup validation
 - `backend/modules/evaluation_engine.py` - Fallback marking
 - `backend/modules/interview_manager.py` - Followup count tracking
@@ -69,23 +72,26 @@ fix: improve interview flow and fallback handling
 - `backend/modules/question_generator.py` - Duplicate detection + fallbacks
 
 ### Tests & Documentation
+
 - `backend/tests/debug/test_interview_flow_fix.py` - Comprehensive test
 - `docs/archive/INTERVIEW_FLOW_FIX_COMPLETE.md` - Detailed fix report
 - `docs/archive/REPOSITORY_CLEANUP_COMPLETE.md` - Cleanup report
 - `docs/archive/REPOSITORY_CLEANUP_REPORT.md` - Moved from root
-- `PRE_COMMIT_VERIFICATION.md` - Pre-commit checklist
+- `docs/archive/PRE_COMMIT_VERIFICATION.md` - Pre-commit checklist
 
 ---
 
 ## Security Verification
 
 ✅ **No sensitive data exposed:**
+
 - `backend/.env` confirmed NOT tracked by Git
 - No API keys in commit
 - Only documentation about key patterns (safe)
 - All secrets use placeholder format
 
 ✅ **Git ignore working:**
+
 ```bash
 $ git check-ignore backend/.env
 backend/.env
@@ -98,6 +104,7 @@ backend/.env
 **Test:** `backend/tests/debug/test_interview_flow_fix.py`
 
 **Results (LLM unavailable mode):**
+
 ```
 ✅ No infinite loops
 ✅ No duplicate questions
@@ -113,13 +120,16 @@ backend/.env
 ## What's Next
 
 ### Immediate Testing
+
 1. **Add real Gemini API key:**
+
    ```bash
    # Edit backend/.env
    GEMINI_API_KEY=your_actual_key_here
    ```
 
 2. **Run test with real LLM:**
+
    ```bash
    cd backend
    .\.venv\Scripts\Activate.ps1
@@ -134,12 +144,14 @@ backend/.env
    - No duplicate questions
 
 ### Frontend Integration
+
 1. Start backend server
 2. Start frontend dev server
 3. Complete full interview through UI
 4. Verify state updates correctly
 
 ### Production Deployment
+
 1. Set environment variables on server
 2. Deploy backend changes
 3. Monitor logs for any issues
@@ -157,6 +169,7 @@ backend/.env
 ✅ **Ready for production**
 
 The interview flow now handles:
+
 - Duplicate questions
 - Maximum followups
 - LLM failures gracefully

@@ -18,7 +18,7 @@ export function Navbar({ fullBleed = false }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-bg-primary/80 backdrop-blur-xl">
-      <div className={fullBleed ? 'mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-8' : 'container-steer flex h-16 items-center justify-between'}>
+      <div className={fullBleed ? 'mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-6 md:px-12 lg:px-20 xl:px-24' : 'container-steer flex h-16 items-center justify-between'}>
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent transition-colors group-hover:bg-accent/20">
             <Layers size={16} strokeWidth={2.25} />

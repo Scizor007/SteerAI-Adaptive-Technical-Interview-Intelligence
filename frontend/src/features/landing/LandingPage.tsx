@@ -196,12 +196,12 @@ export function LandingPage() {
         <AnimatedGrid />
 
         {/* Centered container */}
-        <div className="relative mx-auto max-w-7xl px-6 md:px-8">
+        <div className="relative mx-auto w-full max-w-[1600px] px-6 md:px-12 lg:px-20 xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center"
+            className="flex flex-col items-center justify-center text-center"
           >
             {/* Badge */}
             <motion.div
@@ -263,7 +263,7 @@ export function LandingPage() {
             </div>
 
             {/* Stats */}
-            <div className="mt-24 grid w-full grid-cols-2 gap-5 sm:grid-cols-4">
+            <div className="mt-24 mx-auto grid w-full max-w-6xl grid-cols-2 gap-5 sm:grid-cols-4">
               {STATS.map((stat, i) => (
                 <StatCard key={stat.label} stat={stat} index={i} />
               ))}
@@ -286,14 +286,14 @@ export function LandingPage() {
           }}
         />
 
-        <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8">
+        <div className="relative mx-auto w-full max-w-[1600px] px-6 md:px-12 lg:px-20 xl:px-24">
           {/* Section header — fully centered */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="mb-16 flex flex-col items-center text-center"
+            className="mb-16 flex flex-col items-center justify-center text-center"
           >
             {/* Eyebrow badge */}
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5">
@@ -354,13 +354,13 @@ export function LandingPage() {
           }}
         />
 
-        <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8">
+        <div className="relative mx-auto w-full max-w-[1600px] px-6 md:px-12 lg:px-20 xl:px-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="flex flex-col items-center text-center"
+            className="flex flex-col items-center justify-center text-center"
           >
             {/* Divider */}
             <div className="mb-14 flex w-full max-w-xs items-center gap-4">

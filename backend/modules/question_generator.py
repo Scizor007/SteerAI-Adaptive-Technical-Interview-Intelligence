@@ -26,6 +26,7 @@ class QuestionGenerator:
         candidate: CandidateProfile,
         experience_level: str,
         questions_already_asked: list[str],
+        target_difficulty: Difficulty = None,
     ) -> GeneratedQuestion:
         """
         Generate a single interview question for the given topic via LLM.
@@ -35,6 +36,7 @@ class QuestionGenerator:
             candidate: Full candidate profile.
             experience_level: "junior" | "mid" | "senior" | "expert"
             questions_already_asked: List of previously asked question texts.
+            target_difficulty: Optional difficulty override from adaptive engine.
 
         Returns:
             A question string to present to the candidate.
@@ -42,12 +44,16 @@ class QuestionGenerator:
         import logging
         logger = logging.getLogger(__name__)
         
+        # Use target difficulty if provided, otherwise use topic's difficulty
+        effective_difficulty = target_difficulty or topic.difficulty
+        
         # Build prompt
         prompt = build_question_prompt(
             topic=topic,
             candidate=candidate,
             experience_level=experience_level,
-            questions_already_asked=questions_already_asked
+            questions_already_asked=questions_already_asked,
+            target_difficulty=effective_difficulty,
         )
         
         # Generate and parse JSON via LLMService
@@ -71,7 +77,7 @@ class QuestionGenerator:
         if not expected_points and not is_fallback:
             logger.warning(f"[VALIDATION] Question generated without expected_points for topic: {topic.title}")
         
-        difficulty = self._parse_difficulty(response_data.get("estimated_difficulty"), topic.difficulty)
+        difficulty = self._parse_difficulty(response_data.get("estimated_difficulty"), effective_difficulty)
         return GeneratedQuestion(
             question=question_text,
             expected_points=expected_points,

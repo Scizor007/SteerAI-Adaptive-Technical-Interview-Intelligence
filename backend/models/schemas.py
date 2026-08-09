@@ -53,6 +53,15 @@ class InterviewPhase(str, Enum):
     COMPLETE = "complete"
 
 
+class AdaptiveDecision(str, Enum):
+    """Adaptive decision types for interview flow."""
+    NEXT_TOPIC = "next_topic"
+    FOLLOW_UP = "follow_up"
+    HARDER = "harder"
+    SIMPLER = "simpler"
+    END_INTERVIEW = "end_interview"
+
+
 class MissionStatus(str, Enum):
     """Derived status of a single curriculum mission for a candidate."""
     PASSED = "passed"
@@ -315,6 +324,14 @@ class InterviewScoreSummary(BaseModel):
     confidence: float = 0.0
     coverage_bonus: float = 0.0
     consistency_bonus: float = 0.0
+
+
+class AdaptiveDecisionResult(BaseModel):
+    """Result from the adaptive decision engine."""
+    decision: AdaptiveDecision
+    reason: str
+    target_topic: Optional[str] = None
+    difficulty: Difficulty = Difficulty.INTERMEDIATE
 
 
 # ────────────────────────────────────────────────────────────────

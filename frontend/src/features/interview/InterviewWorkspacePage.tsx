@@ -8,6 +8,8 @@ import {
   HelpCircle,
   Loader2,
   Menu,
+  Mic,
+  MicOff,
   Paperclip,
   Radar,
   Send,
@@ -19,10 +21,11 @@ import {
   BookOpen,
   ChevronRight,
   Zap,
+  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../../layouts';
-import { useCandidates, useInterviewUI } from '../../hooks';
+import { useCandidates, useInterviewUI, useVoiceRecording } from '../../hooks';
 import {
   Avatar,
   Badge,
@@ -240,6 +243,17 @@ export function InterviewWorkspacePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [charCount, setCharCount] = useState(0);
+
+  // Voice recording state
+  const voice = useVoiceRecording();
+
+  // Effect to update answer when voice transcript changes
+  useEffect(() => {
+    if (voice.transcript && voice.state === 'processing') {
+      interview.setAnswer(voice.transcript.trim());
+      voice.resetTranscript();
+    }
+  }, [voice.transcript, voice.state]);
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
@@ -648,9 +662,40 @@ export function InterviewWorkspacePage() {
                     <span className="text-[14px] font-semibold tracking-[-0.01em] text-indigo-200">
                       Your Answer
                     </span>
-                    <div className="hidden items-center gap-1.5 text-gray-600 sm:flex">
-                      <Info size={13} />
-                      <span className="text-[11.5px]">Markdown is supported</span>
+                    <div className="flex items-center gap-3">
+                      {/* Voice Recording Indicator */}
+                      {voice.state === 'listening' && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5"
+                        >
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.5 }}
+                            className="h-2 w-2 rounded-full bg-red-500"
+                          />
+                          <span className="text-xs font-medium text-red-400">
+                            Recording {formatElapsed(voice.duration)}
+                          </span>
+                        </motion.div>
+                      )}
+                      
+                      {voice.state === 'processing' && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex items-center gap-2 text-indigo-400"
+                        >
+                          <Loader2 size={14} className="animate-spin" />
+                          <span className="text-xs font-medium">Transcribing...</span>
+                        </motion.div>
+                      )}
+                      
+                      <div className="hidden items-center gap-1.5 text-gray-600 sm:flex">
+                        <Info size={13} />
+                        <span className="text-[11.5px]">Markdown is supported</span>
+                      </div>
                     </div>
                   </div>
 
@@ -668,6 +713,60 @@ export function InterviewWorkspacePage() {
                     style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}
                   >
                     <div className="flex items-center gap-3">
+                      {/* Voice Recording Controls */}
+                      {voice.isSupported ? (
+                        <>
+                          {voice.state === 'idle' && (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={voice.startRecording}
+                              disabled={interview.isEvaluating}
+                              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13px] text-gray-300 transition-all hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-300 disabled:opacity-40"
+                              title="Use voice input"
+                            >
+                              <Mic size={14} />
+                              <span>Speak</span>
+                            </motion.button>
+                          )}
+                          
+                          {voice.state === 'listening' && (
+                            <div className="flex items-center gap-2">
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={voice.stopRecording}
+                                className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[13px] text-emerald-300 transition-all hover:bg-emerald-500/20"
+                              >
+                                <MicOff size={14} />
+                                <span>Stop</span>
+                              </motion.button>
+                              
+                              <button
+                                onClick={voice.cancelRecording}
+                                className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-gray-500 transition-colors hover:text-gray-300"
+                                title="Cancel recording"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          )}
+                          
+                          {voice.state === 'error' && (
+                            <div className="flex items-center gap-2 text-xs text-red-400">
+                              <MicOff size={14} />
+                              <span>{voice.error}</span>
+                              <button
+                                onClick={voice.resetTranscript}
+                                className="ml-1 text-gray-500 hover:text-gray-300"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : null}
+                      
                       <button
                         disabled
                         className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] text-gray-600 transition-colors disabled:opacity-40"

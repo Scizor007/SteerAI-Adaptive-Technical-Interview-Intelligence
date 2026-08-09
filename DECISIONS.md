@@ -113,3 +113,48 @@
 - **Chosen option**: Enhanced fallback detection with `_fallback` flags, added validation warnings for empty expected_points, improved error logging to surface quota issues clearly.
 - **Impact**: System now clearly indicates when operating in degraded mode. Production requires paid API tier. Added validation that questions should never generate without evaluation rubrics.
 - **Related Documents**: `docs/dev-notes/EVALUATION_DIAGNOSIS.md`, `docs/archive/EVALUATION_FIX_SUMMARY.md`
+
+---
+
+## DEC-012: Adaptive Interview Decision Engine
+
+- **Timestamp**: 2026-08-08
+- **Problem**: Interview flow was purely linear (follow-up or next topic), lacking intelligence to adjust difficulty or end early based on performance.
+- **Chosen option**: Lightweight `AdaptiveDecisionEngine` that consumes existing `EvaluationResult` and makes five decision types: `NEXT_TOPIC`, `FOLLOW_UP`, `HARDER`, `SIMPLER`, `END_INTERVIEW`.
+- **Reason**: The existing `EvaluationEngine` provides rich evidence (scores, mastery, needs_followup). Rather than create a parallel scoring system, we use a pure function to interpret that evidence and route the interview intelligently.
+- **Implementation**:
+  - New module: `backend/modules/adaptive_decision_engine.py`
+  - Decision thresholds: Strong (≥7.0), Weak (<4.0), High mastery (≥70%), Low mastery (<40%)
+  - Respects all existing limits: max questions, max follow-ups, duplicate detection
+  - Returns structured `AdaptiveDecisionResult` with decision type, reason, target topic, and difficulty
+- **Integration**: Modified `InterviewManager.continue_interview()` to call `adaptive_engine.decide()` after evaluation, then route based on the decision instead of using hardcoded follow-up logic.
+- **Safety**: Preserves all existing guardrails - no infinite loops, no repeated questions, respects maximum limits.
+- **Impact**: Interviews now adapt difficulty in real-time, can simplify questions when candidates struggle, increase challenge when they excel, and end early when sufficient evidence is collected.
+- **Related Schema**: Added `AdaptiveDecision` enum and `AdaptiveDecisionResult` model to `models/schemas.py`
+
+---
+
+## DEC-013: Browser-Native Voice Answer Input
+
+- **Timestamp**: 2026-08-08
+- **Problem**: Typing long technical answers is tedious; voice input would improve candidate experience.
+- **Chosen option**: Client-side Web Speech API integration with manual transcript review before submission.
+- **Reason**: Browser-native API requires no additional dependencies, works offline, and keeps voice processing client-side. Candidates can speak naturally, review/edit the transcript, then submit through the existing answer pipeline.
+- **Implementation**:
+  - New hook: `frontend/src/hooks/useVoiceRecording.ts`
+  - Uses `SpeechRecognition` / `webkitSpeechRecognition` API
+  - States: idle, listening, processing, error
+  - Graceful degradation if API unsupported or permission denied
+  - Real-time duration counter and animated recording indicator
+- **UI Integration**: Added microphone button to Interview Workspace answer section:
+  - "Speak" button starts recording (changes to "Stop" button with timer)
+  - Live recording indicator shows elapsed time
+  - Transcript automatically populates answer textarea when recording stops
+  - Candidate can edit transcript before clicking existing "Send Answer" button
+  - Cancel option available during recording
+  - Error states shown inline (permission denied, no speech detected, etc.)
+- **Backend Impact**: Zero - voice is transcribed client-side; backend receives normal answer string
+- **Safety**: Typed answer mode always works; voice is purely optional enhancement
+- **Related Files**: `frontend/src/hooks/useVoiceRecording.ts`, modifications to `InterviewWorkspacePage.tsx`
+
+---

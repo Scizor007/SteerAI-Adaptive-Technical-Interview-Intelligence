@@ -194,3 +194,105 @@ candidate answer → Evaluation Prompt → LLMProvider (OpenRouter/Gemini) → J
 **Sprint 2 — LLM Integration & Backend Logic** (Complete)
 
 ---
+
+---
+
+## Adaptive Interview System (DEC-012)
+
+### Adaptive Decision Engine
+
+**Purpose**: Intelligently route interview flow based on candidate performance evidence.
+
+**Decision Types**:
+
+- `NEXT_TOPIC` - Strong answer, move forward
+- `FOLLOW_UP` - Incomplete/unclear, probe deeper
+- `HARDER` - High mastery, increase challenge
+- `SIMPLER` - Struggling, decrease difficulty
+- `END_INTERVIEW` - Sufficient evidence collected
+
+**Thresholds**:
+
+- Strong answer: ≥7.0/10
+- Weak answer: <4.0/10
+- High mastery: ≥70%
+- Low mastery: <40%
+
+**Integration Point**: Called after `EvaluationEngine` in `InterviewManager.continue_interview()`
+
+**Safety**: Respects all existing limits (max questions, max follow-ups, duplicate detection)
+
+### Question Difficulty Adaptation
+
+**Mechanism**: `QuestionGenerator.generate()` accepts optional `target_difficulty` parameter from adaptive decision
+
+**Difficulty Levels** (ordered):
+
+1. Foundational
+2. Intermediate
+3. Advanced
+4. Expert
+
+**Adaptation Logic**:
+
+- Strong performance → increase difficulty by one level
+- Weak performance → decrease difficulty by one level
+- Maintains current level for acceptable answers (5.0-7.9)
+
+---
+
+## Voice Answer Input (DEC-013)
+
+### Client-Side Implementation
+
+**Technology**: Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`)
+
+**Hook**: `useVoiceRecording()` in `frontend/src/hooks/useVoiceRecording.ts`
+
+**States**:
+
+- `idle` - Ready to record
+- `listening` - Microphone active, capturing speech
+- `processing` - Transcribing audio to text
+- `error` - Permission denied, no speech, or network error
+
+**Features**:
+
+- Real-time duration counter
+- Live recording indicator with animated pulse
+- Continuous recording with interim results
+- Manual stop control (candidate decides when done speaking)
+- Cancel option during recording
+- Error messages with clear next steps
+
+### UI Integration
+
+**Location**: Interview Workspace answer section
+
+**Controls**:
+
+- **Speak Button**: Initiates recording (only shown if browser supports API)
+- **Recording Indicator**: Shows elapsed time with animated red dot
+- **Stop Button**: Ends recording and processes transcript
+- **Cancel Button**: Aborts recording and clears transcript
+
+**Flow**:
+
+1. Candidate clicks "Speak"
+2. Browser requests microphone permission
+3. Recording starts (shows timer and indicator)
+4. Candidate speaks their answer
+5. Candidate clicks "Stop"
+6. Transcript appears in answer textarea
+7. Candidate reviews/edits transcript
+8. Candidate clicks "Send Answer" (existing flow)
+
+**Backend Impact**: None - transcript sent as regular answer string
+
+**Graceful Degradation**:
+
+- If API unsupported: button hidden, typed mode always available
+- If permission denied: error message shown, falls back to typing
+- If no speech detected: helpful error, allows retry
+
+---

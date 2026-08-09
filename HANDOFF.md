@@ -23,12 +23,12 @@ The repository virtual environment references a missing Python 3.11 executable. 
 
 ## Last Modified Files
 
-| File | Change |
-|------|--------|
-| `backend/config.py` | Added LLM_PROVIDER, OPENROUTER_API_KEY, and OPENROUTER_MODEL. |
-| `backend/services/llm/provider.py` | New `LLMProvider` abstract base class. |
-| `backend/services/llm/openrouter_provider.py` | New OpenRouter REST API implementation. |
-| `backend/services/llm/gemini_provider.py` | Encapsulated Gemini SDK implementation. |
-| `backend/services/llm_service.py` | Refactored to delegate to provider while keeping parsing and fallbacks intact. |
+| File                                          | Change                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `backend/config.py`                           | Added LLM_PROVIDER, OPENROUTER_API_KEY, and OPENROUTER_MODEL.                  |
+| `backend/services/llm/provider.py`            | New `LLMProvider` abstract base class.                                         |
+| `backend/services/llm/openrouter_provider.py` | New OpenRouter REST API implementation.                                        |
+| `backend/services/llm/gemini_provider.py`     | Encapsulated Gemini SDK implementation.                                        |
+| `backend/services/llm_service.py`             | Refactored to delegate to provider while keeping parsing and fallbacks intact. |
 
 ---

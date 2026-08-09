@@ -26,6 +26,7 @@ from models.schemas import (
     EvaluationEvidence,
     QuestionRecord,
     Feedback,
+    AdaptiveDecision,
 )
 from modules.candidate_loader import CandidateLoader
 from modules.curriculum_loader import CurriculumLoader
@@ -37,6 +38,7 @@ from modules.followup_generator import FollowupGenerator
 from modules.evaluation_engine import EvaluationEngine
 from modules.feedback_generator import FeedbackGenerator
 from modules.session_manager import SessionManager
+from modules.adaptive_decision_engine import AdaptiveDecisionEngine
 from config import MAX_QUESTIONS_PER_INTERVIEW, MAX_FOLLOWUPS_PER_TOPIC
 
 
@@ -77,6 +79,9 @@ class InterviewManager:
         self.followup_generator = FollowupGenerator()
         self.evaluation_engine = EvaluationEngine()
         self.feedback_generator = FeedbackGenerator()
+
+        # Adaptive decision engine
+        self.adaptive_engine = AdaptiveDecisionEngine()
 
         # Session state
         self.session_manager = SessionManager()
@@ -208,41 +213,125 @@ class InterviewManager:
         # Build context for decision-making
         context = self.context_builder.build(state)
 
-        # Check if interview should end
-        if state.total_questions >= state.max_questions:
+        # Use adaptive decision engine to determine next action
+        adaptive_decision = self.adaptive_engine.decide(
+            evaluation=evaluation_result,
+            current_record=current_record,
+            questions_asked=state.questions_asked,
+            max_questions=state.max_questions,
+            max_followups=MAX_FOLLOWUPS_PER_TOPIC,
+            plan=state.plan,
+            current_topic_index=state.current_topic_index,
+            topic_mastery=state.topic_mastery,
+        )
+
+        logger.info(
+            f"[ADAPTIVE] Decision: {adaptive_decision.decision.value} - {adaptive_decision.reason}"
+        )
+
+        # Handle adaptive decisions
+        if adaptive_decision.decision == AdaptiveDecision.END_INTERVIEW:
             return self._end_interview(session_id, state)
 
-        # Decide: follow-up or next topic
-        # Pass evaluation_result to should_follow_up for intelligent decision
-        if current_record and self.followup_generator.should_follow_up(
-            current_record, evaluation_result, MAX_FOLLOWUPS_PER_TOPIC
-        ):
-            logger.info(f"[INTERVIEW] Generating follow-up (count: {current_record.followup_count + 1}/{MAX_FOLLOWUPS_PER_TOPIC})")
-            
+        elif adaptive_decision.decision == AdaptiveDecision.FOLLOW_UP:
             generated_followup = self.followup_generator.generate(
                 original_question=current_record.question,
                 candidate_answer=message,
                 topic_title=current_record.topic,
             )
-            
-            # CRITICAL FIX: Increment followup_count on the CURRENT record
-            # The new question record inherits the count from its parent
+
             current_record.followup_count += 1
-            
-            state.questions_asked.append(QuestionRecord(
-                topic=current_record.topic,
-                question=generated_followup.question,
-                difficulty=generated_followup.estimated_difficulty,
-                expected_points=generated_followup.expected_points,
-                followup_count=current_record.followup_count,  # Inherit count
-            ))
+
+            state.questions_asked.append(
+                QuestionRecord(
+                    topic=current_record.topic,
+                    question=generated_followup.question,
+                    difficulty=adaptive_decision.difficulty,
+                    expected_points=generated_followup.expected_points,
+                    followup_count=current_record.followup_count,
+                )
+            )
             state.total_questions += 1
             state.phase = "asking"
-            state.conversation_history.append({"role": "interviewer", "content": generated_followup.question})
+            state.conversation_history.append(
+                {"role": "interviewer", "content": generated_followup.question}
+            )
             self.session_manager.update_session(session_id, state)
             return InterviewResponse(reply=generated_followup.question, done=False)
 
-        # Move to next topic
+        elif adaptive_decision.decision == AdaptiveDecision.SIMPLER:
+            # Generate simpler question on same topic
+            if state.plan and state.current_topic_index < len(
+                state.plan.planned_topics
+            ):
+                current_topic = state.plan.planned_topics[state.current_topic_index]
+                asked_questions = [q.question for q in state.questions_asked]
+
+                generated_question = self.question_generator.generate(
+                    topic=current_topic,
+                    candidate=state.candidate,
+                    experience_level=(
+                        state.analysis.experience_level.value
+                        if state.analysis
+                        else "mid"
+                    ),
+                    questions_already_asked=asked_questions,
+                    target_difficulty=adaptive_decision.difficulty,
+                )
+
+                state.questions_asked.append(
+                    QuestionRecord(
+                        topic=current_topic.title,
+                        question=generated_question.question,
+                        difficulty=adaptive_decision.difficulty,
+                        expected_points=generated_question.expected_points,
+                    )
+                )
+                state.total_questions += 1
+                state.phase = "asking"
+                state.conversation_history.append(
+                    {"role": "interviewer", "content": generated_question.question}
+                )
+                self.session_manager.update_session(session_id, state)
+                return InterviewResponse(reply=generated_question.question, done=False)
+
+        elif adaptive_decision.decision == AdaptiveDecision.HARDER:
+            # Generate harder question on same or related topic
+            if state.plan and state.current_topic_index < len(
+                state.plan.planned_topics
+            ):
+                current_topic = state.plan.planned_topics[state.current_topic_index]
+                asked_questions = [q.question for q in state.questions_asked]
+
+                generated_question = self.question_generator.generate(
+                    topic=current_topic,
+                    candidate=state.candidate,
+                    experience_level=(
+                        state.analysis.experience_level.value
+                        if state.analysis
+                        else "mid"
+                    ),
+                    questions_already_asked=asked_questions,
+                    target_difficulty=adaptive_decision.difficulty,
+                )
+
+                state.questions_asked.append(
+                    QuestionRecord(
+                        topic=current_topic.title,
+                        question=generated_question.question,
+                        difficulty=adaptive_decision.difficulty,
+                        expected_points=generated_question.expected_points,
+                    )
+                )
+                state.total_questions += 1
+                state.phase = "asking"
+                state.conversation_history.append(
+                    {"role": "interviewer", "content": generated_question.question}
+                )
+                self.session_manager.update_session(session_id, state)
+                return InterviewResponse(reply=generated_question.question, done=False)
+
+        # Default: NEXT_TOPIC
         state.current_topic_index += 1
         if state.plan and state.current_topic_index >= len(state.plan.planned_topics):
             return self._end_interview(session_id, state)
@@ -257,19 +346,26 @@ class InterviewManager:
         generated_question = self.question_generator.generate(
             topic=next_topic,
             candidate=state.candidate,
-            experience_level=state.analysis.experience_level.value if state.analysis else "mid",
+            experience_level=(
+                state.analysis.experience_level.value if state.analysis else "mid"
+            ),
             questions_already_asked=asked_questions,
+            target_difficulty=adaptive_decision.difficulty,
         )
 
-        state.questions_asked.append(QuestionRecord(
-            topic=next_topic.title,
-            question=generated_question.question,
-            difficulty=generated_question.estimated_difficulty,
-            expected_points=generated_question.expected_points,
-        ))
+        state.questions_asked.append(
+            QuestionRecord(
+                topic=next_topic.title,
+                question=generated_question.question,
+                difficulty=adaptive_decision.difficulty,
+                expected_points=generated_question.expected_points,
+            )
+        )
         state.total_questions += 1
         state.phase = "asking"
-        state.conversation_history.append({"role": "interviewer", "content": generated_question.question})
+        state.conversation_history.append(
+            {"role": "interviewer", "content": generated_question.question}
+        )
         self.session_manager.update_session(session_id, state)
 
         return InterviewResponse(reply=generated_question.question, done=False)

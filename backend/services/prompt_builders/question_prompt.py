@@ -1,15 +1,26 @@
 from typing import List, Dict, Any
-from models.schemas import InterviewContext, CandidateProfile, PlannedTopic
+from models.schemas import InterviewContext, CandidateProfile, PlannedTopic, Difficulty
 
 def build_question_prompt(
     topic: PlannedTopic,
     candidate: CandidateProfile,
     experience_level: str,
-    questions_already_asked: List[str]
+    questions_already_asked: List[str],
+    target_difficulty: Difficulty = None,
 ) -> str:
     """
     Builds the prompt to generate a new interview question for a specific topic.
+    
+    Args:
+        topic: The planned topic
+        candidate: Candidate profile
+        experience_level: Experience level string
+        questions_already_asked: List of previous questions
+        target_difficulty: Optional difficulty override from adaptive engine
     """
+    
+    # Use target difficulty if provided, otherwise use topic's difficulty
+    effective_difficulty = target_difficulty or topic.difficulty
     
     # Format previously asked questions
     previous_q_text = "\n".join([f"- {q}" for q in questions_already_asked]) if questions_already_asked else "None"
@@ -27,7 +38,7 @@ Current Topic:
 - Title: {topic.title}
 - Module: {topic.module_name}
 - Curriculum Day: {topic.day}
-- Target Difficulty: {topic.difficulty.value.upper()}
+- Target Difficulty: {effective_difficulty.value.upper()}
 - Priority: {topic.priority.value.upper()}
 
 Previously Asked Questions (DO NOT REPEAT THESE):

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
   Brain,
@@ -9,6 +9,7 @@ import {
   FileOutput,
   Database,
   GitMerge,
+  Code2,
 } from 'lucide-react';
 import { AppLayout } from '../../layouts';
 import { Badge, Card } from '../../components/ui';
@@ -100,9 +101,23 @@ const FLOW = [
   'session',
 ];
 
+// Presentation-only accent per module — purely visual, no bearing on data.
+const MODULE_COLORS: Record<string, { grad: string; text: string; soft: string; border: string }> = {
+  manager: { grad: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', text: '#c4b5fd', soft: 'rgba(139,92,246,0.14)', border: 'rgba(167,139,250,0.4)' },
+  analyzer: { grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', text: '#93c5fd', soft: 'rgba(59,130,246,0.14)', border: 'rgba(96,165,250,0.4)' },
+  planner: { grad: 'linear-gradient(135deg, #10b981, #34d399)', text: '#6ee7b7', soft: 'rgba(16,185,129,0.14)', border: 'rgba(52,211,153,0.4)' },
+  question: { grad: 'linear-gradient(135deg, #d946ef, #e879f9)', text: '#f0abfc', soft: 'rgba(217,70,239,0.14)', border: 'rgba(232,121,249,0.4)' },
+  followup: { grad: 'linear-gradient(135deg, #06b6d4, #22d3ee)', text: '#67e8f9', soft: 'rgba(6,182,212,0.14)', border: 'rgba(34,211,238,0.4)' },
+  evaluation: { grad: 'linear-gradient(135deg, #f43f5e, #fb7185)', text: '#fda4af', soft: 'rgba(244,63,94,0.14)', border: 'rgba(251,113,133,0.4)' },
+  feedback: { grad: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', text: '#7dd3fc', soft: 'rgba(14,165,233,0.14)', border: 'rgba(56,189,248,0.4)' },
+  session: { grad: 'linear-gradient(135deg, #f59e0b, #fbbf24)', text: '#fcd34d', soft: 'rgba(245,158,11,0.14)', border: 'rgba(251,191,36,0.4)' },
+};
+
 export function ArchitecturePage() {
   const [activeId, setActiveId] = useState('manager');
   const active = MODULES.find((m) => m.id === activeId) ?? MODULES[0];
+  const activeFlowIndex = FLOW.indexOf(activeId);
+  const activeColor = MODULE_COLORS[activeId];
 
   return (
     <AppLayout>
@@ -110,65 +125,161 @@ export function ArchitecturePage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="relative"
       >
-        <div className="mb-12 max-w-2xl">
-          <Badge variant="accent" size="sm" className="mb-4">
-            System architecture
-          </Badge>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary lg:text-4xl">
-            Modular interview pipeline
-          </h1>
-          <p className="mt-3 text-lg text-text-secondary leading-relaxed">
-            Eight independent modules composed by an orchestrator. Each module has a single
-            responsibility and can be enhanced independently.
-          </p>
+        {/* Ambient background accents — decorative only */}
+        <div className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-[560px] overflow-hidden">
+          <div
+            className="absolute -left-40 -top-32 h-[420px] w-[420px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.13), transparent 70%)', filter: 'blur(60px)' }}
+          />
+          <div
+            className="absolute -right-40 top-0 h-[420px] w-[420px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.11), transparent 70%)', filter: 'blur(60px)' }}
+          />
+        </div>
+
+        {/* Hero */}
+        <div className="mb-16 flex flex-col items-start gap-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <Badge variant="accent" size="sm" className="mb-5">
+              System architecture
+            </Badge>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary lg:text-4xl">
+              Modular interview{' '}
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: 'linear-gradient(135deg, #a5b4fc, #818cf8 45%, #c4b5fd)' }}
+              >
+                pipeline
+              </span>
+            </h1>
+            <p className="mt-4 text-lg leading-relaxed text-text-secondary">
+              Eight independent modules composed by an orchestrator. Each module has a single
+              responsibility and can be enhanced independently.
+            </p>
+          </div>
+
+          {/* Decorative illustration — purely visual, no data */}
+          <div className="relative hidden h-40 w-52 shrink-0 lg:block">
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(167,139,250,0.15))',
+                border: '1px solid rgba(165,180,252,0.35)',
+                boxShadow: '0 20px 50px rgba(99,102,241,0.25)',
+              }}
+            />
+            <div
+              className="absolute inset-6 rounded-full border border-dashed"
+              style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+            />
+            <motion.div
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+              className="absolute left-0 top-3 flex h-9 w-9 items-center justify-center rounded-xl border"
+              style={{ borderColor: 'rgba(56,189,248,0.35)', background: 'rgba(14,165,233,0.14)' }}
+            >
+              <BarChart3 size={15} className="text-sky-300" />
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+              className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center rounded-xl border"
+              style={{ borderColor: 'rgba(251,191,36,0.35)', background: 'rgba(245,158,11,0.14)' }}
+            >
+              <Database size={15} className="text-amber-300" />
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, 7, 0] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+              className="absolute bottom-2 left-6 flex h-9 w-9 items-center justify-center rounded-xl border"
+              style={{ borderColor: 'rgba(167,139,250,0.35)', background: 'rgba(139,92,246,0.14)' }}
+            >
+              <Code2 size={15} className="text-violet-300" />
+            </motion.div>
+          </div>
         </div>
 
         {/* Flow diagram */}
-        <Card variant="elevated" padding="lg" className="mb-8 overflow-hidden">
-          <p className="mb-6 text-xs font-medium uppercase tracking-wider text-text-secondary">
-            Request flow — POST /api/interview
-          </p>
+        <Card
+          variant="elevated"
+          padding="lg"
+          className="mb-10 overflow-hidden border-white/[0.08]"
+          style={{ background: 'linear-gradient(160deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.02) 60%)' }}
+        >
+          <div className="mb-8 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+              Request flow
+            </p>
+            <span
+              className="rounded-md border px-2.5 py-1 font-mono text-[11px] font-medium"
+              style={{ borderColor: 'rgba(129,140,248,0.35)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc' }}
+            >
+              POST /api/interview
+            </span>
+          </div>
 
-          <div className="relative">
-            {/* Animated connection line */}
-            <div className="absolute left-0 right-0 top-1/2 hidden h-px -translate-y-1/2 bg-border lg:block" />
-            <motion.div
-              className="absolute left-0 top-1/2 hidden h-px -translate-y-1/2 bg-accent lg:block"
-              initial={{ width: '0%' }}
-              animate={{ width: '100%' }}
-              transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity, repeatDelay: 3 }}
-              style={{ maxWidth: '100%' }}
-            />
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          <div className="-mx-1 overflow-x-auto pb-2">
+            <div className="flex min-w-max items-center gap-2 px-1 sm:gap-3">
               {FLOW.map((id, i) => {
                 const mod = MODULES.find((m) => m.id === id)!;
                 const isActive = activeId === id;
+                const isPast = i < activeFlowIndex;
                 return (
-                  <motion.button
-                    key={id}
-                    onClick={() => setActiveId(id)}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={`relative z-10 flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all duration-200 ${
-                      isActive
-                        ? 'border-accent bg-accent/10 shadow-md shadow-accent/10'
-                        : 'border-border bg-bg-secondary hover:border-accent/30'
-                    }`}
-                  >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                        isActive ? 'bg-accent text-white' : 'bg-surface text-text-secondary'
-                      }`}
+                  <div key={id} className="flex items-center gap-2 sm:gap-3">
+                    <motion.button
+                      onClick={() => setActiveId(id)}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      whileHover={{ y: -2 }}
+                      className="relative flex w-[104px] flex-col items-center gap-2.5 rounded-xl border py-4 text-center transition-colors duration-200 sm:w-[118px]"
+                      style={{
+                        borderColor: isActive ? 'rgba(129,140,248,0.55)' : 'rgba(255,255,255,0.08)',
+                        background: isActive
+                          ? 'linear-gradient(160deg, rgba(99,102,241,0.18), rgba(99,102,241,0.05))'
+                          : 'rgba(255,255,255,0.025)',
+                        boxShadow: isActive ? '0 0 0 1px rgba(129,140,248,0.15), 0 10px 26px rgba(99,102,241,0.18)' : 'none',
+                      }}
                     >
-                      <mod.icon size={16} />
-                    </div>
-                    <span className="text-[10px] font-medium leading-tight text-text-primary sm:text-xs">
-                      {mod.title.replace(' ', '\n')}
-                    </span>
-                  </motion.button>
+                      <span
+                        className="absolute right-2 top-2 font-mono text-[9px]"
+                        style={{ color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.22)' }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div
+                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-200"
+                        style={{
+                          background: isActive
+                            ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                            : isPast
+                              ? 'rgba(129,140,248,0.15)'
+                              : 'rgba(255,255,255,0.06)',
+                          color: isActive ? '#ffffff' : isPast ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <mod.icon size={16} />
+                      </div>
+                      <span
+                        className="whitespace-pre-line px-1 text-[11px] font-medium leading-tight"
+                        style={{ color: isActive ? '#f4f4f5' : 'rgba(255,255,255,0.72)' }}
+                      >
+                        {mod.title.replace(' ', '\n')}
+                      </span>
+                    </motion.button>
+
+                    {i < FLOW.length - 1 && (
+                      <ArrowRight
+                        size={15}
+                        className="shrink-0"
+                        style={{ color: i < activeFlowIndex ? '#818cf8' : 'rgba(255,255,255,0.15)' }}
+                      />
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -176,27 +287,57 @@ export function ArchitecturePage() {
         </Card>
 
         {/* Active module detail */}
-        <motion.div
-          key={activeId}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-        >
-          <Card variant="default" padding="lg">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <active.icon size={24} />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-display text-xl font-semibold text-text-primary">
-                  {active.title}
-                </h2>
-                <p className="mt-2 max-w-2xl leading-relaxed text-text-secondary">
-                  {active.description}
-                </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeId}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Card
+              variant="default"
+              padding="lg"
+              className="relative overflow-hidden border-white/[0.08]"
+              style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.015) 60%)' }}
+            >
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full"
+                style={{ background: `radial-gradient(circle, ${activeColor.soft}, transparent 70%)`, filter: 'blur(30px)' }}
+              />
+
+              <div className="relative flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+                <div className="flex flex-1 gap-5">
+                  <div
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: activeColor.grad, boxShadow: `0 10px 26px ${activeColor.soft}` }}
+                  >
+                    <active.icon size={24} className="text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h2 className="font-display text-xl font-semibold text-text-primary">
+                        {active.title}
+                      </h2>
+                      <span
+                        className="rounded-md border px-2 py-0.5 font-mono text-[10.5px]"
+                        style={{ borderColor: activeColor.border, color: activeColor.text }}
+                      >
+                        step {activeFlowIndex + 1} of {FLOW.length}
+                      </span>
+                    </div>
+                    <p className="mt-3 max-w-xl leading-relaxed text-text-secondary">
+                      {active.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className="flex shrink-0 items-center gap-6 border-t pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0"
+                  style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+                >
                   <div>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
+                    <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-text-secondary">
                       Inputs
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -207,8 +348,11 @@ export function ArchitecturePage() {
                       ))}
                     </div>
                   </div>
+
+                  <ArrowRight size={16} className="hidden shrink-0 text-indigo-400/50 sm:block" />
+
                   <div>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
+                    <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-text-secondary">
                       Outputs
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -221,33 +365,55 @@ export function ArchitecturePage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
 
         {/* All modules grid */}
-        <div className="mt-12">
-          <h2 className="mb-6 font-display text-xl font-semibold text-text-primary">
+        <div className="mt-16">
+          <h2 className="mb-7 font-display text-xl font-semibold text-text-primary">
             All modules
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {MODULES.map((mod) => (
-              <Card
-                key={mod.id}
-                variant="interactive"
-                padding="md"
-                onClick={() => setActiveId(mod.id)}
-                className={activeId === mod.id ? 'border-accent/40' : ''}
-              >
-                <mod.icon size={18} className="mb-3 text-accent" />
-                <h3 className="font-display text-sm font-semibold text-text-primary">
-                  {mod.title}
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-text-secondary line-clamp-2">
-                  {mod.description}
-                </p>
-              </Card>
-            ))}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {MODULES.map((mod, i) => {
+              const isSelected = activeId === mod.id;
+              const color = MODULE_COLORS[mod.id];
+              return (
+                <Card
+                  key={mod.id}
+                  variant="interactive"
+                  padding="md"
+                  onClick={() => setActiveId(mod.id)}
+                  className="group relative overflow-hidden border-white/[0.08] p-5 transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    borderColor: isSelected ? color.border : undefined,
+                    background: isSelected ? `linear-gradient(160deg, ${color.soft}, rgba(255,255,255,0.02))` : 'rgba(255,255,255,0.02)',
+                    boxShadow: isSelected ? `0 0 0 1px ${color.border}, 0 10px 24px ${color.soft}` : undefined,
+                  }}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg"
+                      style={{ background: color.soft, color: color.text }}
+                    >
+                      <mod.icon size={17} />
+                    </div>
+                    <span
+                      className="rounded-md px-1.5 py-0.5 font-mono text-[10px]"
+                      style={{ color: isSelected ? color.text : 'rgba(255,255,255,0.25)' }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-sm font-semibold text-text-primary">
+                    {mod.title}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-text-secondary line-clamp-2">
+                    {mod.description}
+                  </p>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </motion.div>

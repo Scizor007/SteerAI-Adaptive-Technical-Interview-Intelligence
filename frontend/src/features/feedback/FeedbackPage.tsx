@@ -77,172 +77,250 @@ export function FeedbackPage() {
   return (
     <AppLayout>
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-5xl px-4 py-8 md:py-16"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-screen"
       >
-        {/* Clean Header & Massive Hero Score */}
-        <div className="mb-20 flex flex-col items-center text-center">
-          <Badge variant="accent" size="sm" className="mb-6">
-            Assessment Complete
-          </Badge>
-          
-          <div className="mb-8 flex items-center justify-center gap-4 text-text-primary">
-            <span className="font-display text-8xl md:text-[140px] font-bold tracking-tighter leading-none">
-              {report.overall_score}
-            </span>
-            <span className="text-2xl md:text-4xl font-light text-text-secondary mt-auto pb-4 md:pb-8">
-              / 100
-            </span>
-          </div>
-
-          <h1 className="font-display text-3xl font-semibold text-text-primary mb-4">
-            {member.name}
-          </h1>
-          <p className="text-text-secondary text-lg font-light flex items-center gap-2">
-            {member.jobRole} · {member.yearsExperience} yrs experience
-          </p>
-
-          <div className="mt-10 flex gap-4">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="rounded-full px-8"
-              leftIcon={<Download size={18} />}
-              onClick={handleDownload}
-            >
-              Download Report
-            </Button>
-            <Link to="/candidates">
-              <Button variant="ghost" size="lg" className="rounded-full px-8 text-text-secondary">
-                View Roster
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Executive Summary (No Card, just typography) */}
-        <section className="mb-24 text-center max-w-3xl mx-auto">
-          <h2 className="mb-6 text-sm font-medium tracking-widest uppercase text-text-secondary">
-            Executive Summary
-          </h2>
-          <p className="text-xl leading-relaxed text-text-primary font-light">
-            {report.summary}
-          </p>
-        </section>
-
-        <hr className="border-border/40 mb-24" />
-
-        {/* Core Analysis (Radar + Strengths/Weaknesses) */}
-        <div className="grid gap-16 lg:grid-cols-[1fr_400px] mb-24">
-          <div>
-            <h2 className="mb-10 text-sm font-medium tracking-widest uppercase text-text-secondary">
-              Skill Breakdown
-            </h2>
-            <div className="h-80 w-full mb-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData} outerRadius="70%">
-                  <PolarGrid stroke={COLORS.border} strokeDasharray="3 3" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fill: COLORS.textSecondary, fontSize: 12, fontWeight: 300 }}
-                  />
-                  <Radar
-                    dataKey="score"
-                    stroke={COLORS.accent}
-                    fill={COLORS.accent}
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="space-y-12">
-            <div>
-              <h3 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-text-primary">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-signal/10 text-signal">
-                  <TrendingUp size={16} />
+        {/* Hero Section - Score */}
+        <div className="border-b border-white/[0.08] bg-gradient-to-b from-indigo-500/5 to-transparent">
+          <div className="mx-auto max-w-6xl px-6 py-20 md:py-32">
+            <div className="flex flex-col items-center text-center">
+              <Badge variant="accent" size="sm" className="mb-8">
+                Assessment Complete
+              </Badge>
+              
+              {/* Massive Score */}
+              <div className="mb-10 flex items-end justify-center gap-3">
+                <motion.span
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="font-display text-[120px] font-bold leading-none tracking-[-0.04em] text-white md:text-[160px]"
+                >
+                  {report.overall_score}
+                </motion.span>
+                <span className="mb-6 text-4xl font-light text-gray-500 md:mb-8 md:text-5xl">
+                  / 100
                 </span>
-                Demonstrated Strengths
-              </h3>
-              <ul className="space-y-3">
-                {report.strengths.map((s) => (
-                  <li key={s} className="text-base text-text-secondary font-light">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              </div>
 
-            <div>
-              <h3 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-text-primary">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-warning/10 text-warning">
-                  <AlertTriangle size={16} />
-                </span>
-                Identified Gaps
-              </h3>
-              <ul className="space-y-3">
-              {report.gaps.map((w) => (
-                  <li key={w} className="text-base text-text-secondary font-light">
-                    {w}
-                  </li>
-                ))}
-              </ul>
+              {/* Candidate Info */}
+              <h1 className="mb-3 font-display text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                {member.name}
+              </h1>
+              <p className="mb-12 text-lg text-gray-400">
+                {member.jobRole} · {member.yearsExperience} years experience
+              </p>
+
+              {/* Actions */}
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="rounded-full px-8"
+                  leftIcon={<Download size={18} />}
+                  onClick={handleDownload}
+                >
+                  Download Report
+                </Button>
+                <Link to="/candidates">
+                  <Button variant="ghost" size="lg" className="rounded-full px-8">
+                    View All Candidates
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
 
-        <hr className="border-border/40 mb-24" />
-
-        {/* Learning & Timeline (Side by side) */}
-        <div className="grid gap-16 lg:grid-cols-2 mb-24">
-          <div>
-            <h2 className="mb-8 text-sm font-medium tracking-widest uppercase text-text-secondary">
-              Recommended Path
+        {/* Executive Summary */}
+        <div className="border-b border-white/[0.08] bg-white/[0.01]">
+          <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+            <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">
+              Executive Summary
             </h2>
-            <div className="space-y-6">
-              {report.next.map((step, i) => (
-                <div key={step} className="flex gap-4">
-                  <span className="font-mono text-sm text-text-secondary opacity-50 mt-1">
-                    {(i + 1).toString().padStart(2, '0')}
-                  </span>
-                  <span className="text-base text-text-primary font-light">{step}</span>
+            <p className="text-xl leading-relaxed text-gray-300 md:text-2xl md:leading-relaxed">
+              {report.summary}
+            </p>
+          </div>
+        </div>
+
+        {/* Radar Chart + Strengths/Gaps */}
+        <div className="border-b border-white/[0.08]">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <h2 className="mb-12 text-center text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">
+              Performance Analysis
+            </h2>
+            
+            <div className="grid gap-12 lg:grid-cols-[500px_1fr] lg:gap-16">
+              {/* Radar Chart */}
+              <div className="flex flex-col items-center">
+                <div className="h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData} outerRadius="75%">
+                      <PolarGrid stroke={COLORS.border} strokeDasharray="3 3" />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fill: COLORS.textSecondary, fontSize: 13, fontWeight: 500 }}
+                      />
+                      <Radar
+                        dataKey="score"
+                        stroke={COLORS.accent}
+                        fill={COLORS.accent}
+                        fillOpacity={0.2}
+                        strokeWidth={2.5}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="mt-4 text-center text-sm text-gray-500">
+                  Six-dimensional skill assessment
+                </p>
+              </div>
+
+              {/* Strengths & Gaps */}
+              <div className="space-y-10">
+                {/* Strengths */}
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                      <TrendingUp size={20} className="text-emerald-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Demonstrated Strengths</h3>
+                  </div>
+                  <ul className="space-y-3">
+                    {report.strengths.map((s, i) => (
+                      <li key={s} className="flex gap-3 text-[15px] leading-relaxed text-gray-300">
+                        <span className="mt-1 text-emerald-400">✓</span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Gaps */}
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                      <AlertTriangle size={20} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Areas for Development</h3>
+                  </div>
+                  <ul className="space-y-3">
+                    {report.gaps.map((w, i) => (
+                      <li key={w} className="flex gap-3 text-[15px] leading-relaxed text-gray-300">
+                        <span className="mt-1 text-amber-400">!</span>
+                        <span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Topic Mastery */}
+        <div className="border-b border-white/[0.08] bg-white/[0.01]">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <h2 className="mb-12 text-center text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">
+              Topic Mastery
+            </h2>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(report.topic_mastery).map(([topic, score]) => (
+                <div
+                  key={topic}
+                  className="group rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 transition-all hover:border-indigo-500/30 hover:bg-white/[0.04]"
+                >
+                  <p className="mb-4 text-sm text-gray-400">{topic}</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-mono text-4xl font-bold tracking-tight text-white">{score}</p>
+                    <span className="text-lg text-gray-600">%</span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.05]">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${score}%` }}
+                      transition={{ delay: 0.3, duration: 0.8 }}
+                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+        </div>
 
-          <div>
-            <h2 className="mb-8 text-sm font-medium tracking-widest uppercase text-text-secondary">
-              Interview Timeline
-            </h2>
-            <Timeline
-              items={report.evidence.map((evidence, i) => ({
-                id: `${i}`,
-                label: `Interview evidence ${i + 1}`,
-                detail: evidence,
-                time: 'Recorded',
-                status: i === report.evidence.length - 1 ? 'active' : 'completed',
-              }))}
-            />
+        {/* Recommended Path & Timeline */}
+        <div className="border-b border-white/[0.08]">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <div className="grid gap-16 lg:grid-cols-2">
+              {/* Recommended Path */}
+              <div>
+                <h2 className="mb-10 text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">
+                  Recommended Learning Path
+                </h2>
+                <div className="space-y-6">
+                  {report.next.map((step, i) => (
+                    <div
+                      key={step}
+                      className="group flex gap-5 rounded-xl border border-white/[0.05] bg-white/[0.01] p-5 transition-all hover:border-indigo-500/20 hover:bg-white/[0.02]"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 font-mono text-sm font-semibold text-indigo-400">
+                        {(i + 1).toString().padStart(2, '0')}
+                      </div>
+                      <p className="text-[15px] leading-relaxed text-gray-300">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interview Timeline */}
+              <div>
+                <h2 className="mb-10 text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">
+                  Interview Evidence
+                </h2>
+                <Timeline
+                  items={report.evidence.map((evidence, i) => ({
+                    id: `${i}`,
+                    label: `Response ${i + 1}`,
+                    detail: evidence,
+                    time: 'Recorded',
+                    status: i === report.evidence.length - 1 ? 'active' : 'completed',
+                  }))}
+                />
+              </div>
+            </div>
           </div>
         </div>
-        
-        {/* Evidence-based topic mastery */}
-        <div className="rounded-3xl bg-surface/30 p-10 text-center">
-          <h2 className="mb-8 text-sm font-medium tracking-widest uppercase text-text-secondary">
-            Topic Mastery
-          </h2>
-          <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(report.topic_mastery).map(([topic, score]) => (
-              <div key={topic} className="rounded-2xl border border-border/60 px-5 py-4 text-left">
-                <p className="text-sm text-text-secondary">{topic}</p>
-                <p className="mt-2 font-mono text-2xl text-text-primary">{score}%</p>
-              </div>
-            ))}
+
+        {/* Footer CTA */}
+        <div className="bg-gradient-to-b from-transparent to-indigo-500/5">
+          <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+            <h2 className="mb-4 font-display text-2xl font-semibold text-white md:text-3xl">
+              Assessment complete
+            </h2>
+            <p className="mb-8 text-lg text-gray-400">
+              Download this report or review other candidates
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="rounded-full px-8"
+                leftIcon={<Download size={18} />}
+                onClick={handleDownload}
+              >
+                Download JSON Report
+              </Button>
+              <Link to="/candidates">
+                <Button variant="ghost" size="lg" className="rounded-full px-8">
+                  Back to Roster
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>

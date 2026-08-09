@@ -39,7 +39,7 @@ export function useVoiceRecording() {
   const [isSupported, setIsSupported] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Check if browser supports Web Speech API
@@ -66,6 +66,11 @@ export function useVoiceRecording() {
 
     try {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognitionAPI) {
+        setError('Speech recognition is not supported in this browser');
+        return;
+      }
+
       const recognition = new SpeechRecognitionAPI();
 
       recognition.continuous = true;

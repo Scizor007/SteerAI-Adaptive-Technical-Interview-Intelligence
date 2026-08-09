@@ -28,9 +28,6 @@ import { AppLayout } from '../../layouts';
 import { useCandidates, useInterviewUI, useVoiceRecording } from '../../hooks';
 import {
   Avatar,
-  Badge,
-  Button,
-  Progress,
   Textarea,
 } from '../../components/ui';
 

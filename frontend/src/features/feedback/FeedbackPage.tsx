@@ -190,7 +190,7 @@ export function FeedbackPage() {
                     <h3 className="text-lg font-semibold text-white">Demonstrated Strengths</h3>
                   </div>
                   <ul className="space-y-3">
-                    {report.strengths.map((s, i) => (
+                    {report.strengths.map((s) => (
                       <li key={s} className="flex gap-3 text-[15px] leading-relaxed text-gray-300">
                         <span className="mt-1 text-emerald-400">✓</span>
                         <span>{s}</span>
@@ -208,7 +208,7 @@ export function FeedbackPage() {
                     <h3 className="text-lg font-semibold text-white">Areas for Development</h3>
                   </div>
                   <ul className="space-y-3">
-                    {report.gaps.map((w, i) => (
+                    {report.gaps.map((w) => (
                       <li key={w} className="flex gap-3 text-[15px] leading-relaxed text-gray-300">
                         <span className="mt-1 text-amber-400">!</span>
                         <span>{w}</span>

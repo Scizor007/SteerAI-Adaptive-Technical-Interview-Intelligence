@@ -158,3 +158,126 @@
 - **Related Files**: `frontend/src/hooks/useVoiceRecording.ts`, modifications to `InterviewWorkspacePage.tsx`
 
 ---
+
+## DEC-014: Enhanced Question Quality and Contextual Follow-ups
+
+- **Timestamp**: 2026-08-08
+- **Problem**: Initial question and follow-up generation felt generic and AI-like, not reflecting a real senior technical interviewer conducting a thoughtful assessment.
+- **Symptoms**:
+  - Questions lacked engineering depth (e.g., "What is RAG?" instead of architecture/trade-off scenarios)
+  - Follow-ups were disconnected from candidate answers ("Can you elaborate?" instead of targeting specific gaps)
+  - No use of curriculum learning objectives, tools, or candidate mission history
+  - Generic prompts failed to test reasoning over memorization
+- **Chosen option**: Major enhancement to prompt builders with comprehensive context, internal blueprinting, and evaluation-grounded follow-up generation.
+- **Reason**: SteerAI must feel like a conversation with a senior engineer who is listening carefully, not a chatbot generating random technical questions. Questions should test engineering thinking (architecture, trade-offs, failures, constraints), and follow-ups should directly reference what the candidate said and target the most important missing concept.
+
+### Question Generation Enhancement
+
+**Modified**: `backend/services/prompt_builders/question_prompt.py`
+
+Added comprehensive context:
+
+- **Learning objectives** from curriculum (what concepts this question should test)
+- **Tools/technologies** associated with the topic
+- **Candidate learning history** for the specific day (completed, skipped, struggled, attempts)
+- **Internal blueprint** framework: technical concept → evidence criteria → difficulty calibration → personalization
+- **Engineering-focused examples**: Architecture decisions, trade-offs, debugging, failure scenarios, design choices, scalability, reliability, security, cost, latency, production considerations
+- **Anti-patterns**: Explicit instructions to avoid generic questions like "What is X?" or "Tell me about Y"
+- **Scenario-based framing**: Preference for realistic problem contexts over definition-based questions
+- **Expected points guidance**: Instructions to define specific, measurable technical evidence (not just topic keywords)
+
+**Impact**: Questions now test reasoning and implementation knowledge appropriate to candidate experience level and learning history.
+
+### Follow-up Generation Enhancement
+
+**Modified**: `backend/services/prompt_builders/followup_prompt.py`
+
+Added evaluation-grounded context:
+
+- **Full evaluation result**: Overall score, topic mastery, accuracy, reasoning, depth, completeness
+- **Demonstrated strengths**: What the candidate explained well
+- **Missing technical points**: Specific concepts not covered
+- **Misconceptions detected**: Incorrect technical claims or misunderstandings
+- **Knowledge gaps**: Explicit identification of foundational issues
+- **Previous follow-ups**: To prevent repetitive questioning
+- **Expected points**: From original question rubric
+
+Added **priority hierarchy** for follow-up targeting:
+
+1. Correct critical misconception
+2. Probe missing critical concept
+3. Challenge unsupported claim
+4. Request implementation details
+5. Explore trade-offs
+6. Test failure scenarios
+7. Increase difficulty (for strong answers)
+
+Added **conversational grounding instructions**:
+
+- Reference specific things the candidate said when natural
+- Ask ONE thing (no multi-part questions)
+- Make follow-ups feel human and contextual
+- For strong answers (≥7.0): Don't ask trivial clarifications, increase difficulty instead
+- For weak answers (<4.0): Probe the missing foundation rather than jumping topics
+- For misconceptions: Frame questions to discover understanding without revealing the answer
+
+**Modified**: `backend/modules/followup_generator.py`
+
+- Updated `generate()` signature to accept `evaluation_result`, `expected_points`, `previous_followups`
+- Pass all context to `build_followup_prompt()`
+
+**Modified**: `backend/modules/interview_manager.py`
+
+- Collect previous follow-ups for the current topic from `questions_asked`
+- Pass `evaluation_result`, `expected_points`, `previous_followups` to `FollowupGenerator.generate()` when `FOLLOW_UP` decision is made
+
+### Quality Assurance Rules
+
+Both prompts now include internal validation:
+
+- Questions must relate to curriculum and test specific technical concepts
+- Questions must match target difficulty and candidate experience
+- Questions must be different from all previous questions
+- Follow-ups must be grounded in the candidate's actual answer
+- Follow-ups must target ONE specific gap or concept
+- Follow-ups must be different from all previous follow-ups
+- Expected points must capture measurable technical evidence
+
+### Expected Outcomes
+
+**Questions should**:
+
+- Test engineering thinking: architecture, trade-offs, debugging, failure scenarios, design decisions
+- Be personalized to candidate experience level and learning history
+- Present realistic scenarios or problems when appropriate
+- Have clear technical purpose tied to curriculum objectives
+- Include specific expected_points that identify technical evidence to look for
+
+**Follow-ups should**:
+
+- Reference something specific the candidate said (when natural)
+- Target the single most important missing concept or misconception
+- Feel conversational and human
+- Adapt difficulty based on answer quality (probe foundations if weak, increase challenge if strong)
+- Stay strictly within the topic
+- Never repeat or rephrase the same concept
+
+### Impact
+
+- Interview feels like a real technical conversation with a senior engineer
+- Questions test depth and reasoning, not just memorization
+- Follow-ups are contextual and directly address what the candidate demonstrated (or failed to demonstrate)
+- Generic prompts ("Can you elaborate?") eliminated
+- Adaptive flow uses evidence to intelligently guide the conversation
+- No changes to evaluation scoring, session management, or API contracts
+
+**Related Files**:
+
+- `backend/services/prompt_builders/question_prompt.py` (comprehensive context + blueprint)
+- `backend/services/prompt_builders/followup_prompt.py` (evaluation-grounded + priority hierarchy)
+- `backend/modules/followup_generator.py` (updated signature)
+- `backend/modules/interview_manager.py` (pass evaluation context to follow-ups)
+
+**Testing**: System verified with Python syntax check (exit 0), backend hot-reloaded successfully (4 reloads), health check OK, TypeScript compilation passed (exit 0). Ready for live interview testing at http://localhost:5173
+
+---

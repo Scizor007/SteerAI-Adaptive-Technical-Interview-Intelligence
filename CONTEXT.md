@@ -296,3 +296,110 @@ candidate answer → Evaluation Prompt → LLMProvider (OpenRouter/Gemini) → J
 - If no speech detected: helpful error, allows retry
 
 ---
+
+## Enhanced Question Quality System (DEC-014)
+
+### Question Generation Enhancement
+
+**Purpose**: Generate questions that feel like they come from a senior technical interviewer, not a generic AI chatbot.
+
+**Key Improvements**:
+
+1. **Comprehensive Context** (`question_prompt.py`):
+   - Curriculum learning objectives (what concepts to test)
+   - Tools/technologies for the topic
+   - Candidate learning history (completed, skipped, struggled, attempts)
+   - Experience level and years of experience
+   - Job role and education
+
+2. **Internal Blueprint Framework**:
+   - Technical concept to test
+   - Evidence criteria (what distinguishes shallow vs strong answers)
+   - Difficulty calibration per experience level
+   - Personalization based on candidate journey
+
+3. **Engineering-Focused Questions**:
+   - Test architecture, trade-offs, debugging, failure scenarios
+   - Design decisions, scalability, reliability, security, cost, latency
+   - Real-world implementation details and production considerations
+   - Scenario-based framing over definition-based questions
+
+4. **Anti-Patterns Prevention**:
+   - Explicit rejection of generic questions ("What is X?", "Tell me about Y")
+   - Preference for realistic problem contexts
+   - Specific, measurable expected_points (not just topic keywords)
+
+**Example Transformation**:
+
+- **Before**: "What is RAG?"
+- **After**: "You're building a RAG system for an internal knowledge base. How would you design the retrieval pipeline from document ingestion through context construction, and what would you do if the system frequently retrieves technically similar but irrelevant chunks?"
+
+### Follow-up Generation Enhancement
+
+**Purpose**: Generate follow-ups that are directly grounded in the candidate's actual answer, targeting specific gaps or misconceptions.
+
+**Key Improvements**:
+
+1. **Evaluation-Grounded Context** (`followup_prompt.py`):
+   - Full `EvaluationResult` (scores, mastery, strengths, missing points, misconceptions)
+   - Knowledge gaps explicitly identified
+   - Expected points from original question
+   - Previous follow-ups to avoid repetition
+
+2. **Priority Hierarchy** for Follow-up Targeting:
+   1. Correct critical misconception
+   2. Probe missing critical concept
+   3. Challenge unsupported claim
+   4. Request implementation details
+   5. Explore trade-offs
+   6. Test failure scenarios
+   7. Increase difficulty (for strong answers ≥7.0)
+
+3. **Conversational Grounding**:
+   - Reference specific things the candidate said (when natural)
+   - Ask ONE thing (no multi-part questions)
+   - Adapt to answer quality:
+     - Strong (≥7.0): Increase challenge, don't ask trivial clarifications
+     - Weak (<4.0): Probe missing foundations, don't jump topics
+     - Misconception: Frame questions to discover understanding without revealing answer
+
+4. **Anti-Patterns Prevention**:
+   - Explicit rejection of generic follow-ups ("Can you elaborate?", "Tell me more")
+   - Must target specific missing technical point from evaluation
+   - Must be different from all previous follow-ups
+   - Must stay within the topic
+
+**Example Transformation**:
+
+- **Before**: "Can you explain more about your RAG experience?"
+- **After**: "You mentioned storing embeddings in a vector database and retrieving similar documents. How would you reduce the chance of irrelevant chunks being included in the final context, especially when several documents have high semantic similarity?"
+
+### Implementation Details
+
+**Modified Files**:
+
+- `backend/services/prompt_builders/question_prompt.py` - Added comprehensive context, blueprint framework, engineering focus
+- `backend/services/prompt_builders/followup_prompt.py` - Added evaluation grounding, priority hierarchy, conversational instructions
+- `backend/modules/followup_generator.py` - Updated `generate()` signature to accept `evaluation_result`, `expected_points`, `previous_followups`
+- `backend/modules/interview_manager.py` - Pass evaluation context to `FollowupGenerator` when `FOLLOW_UP` decision made
+
+**Quality Assurance**:
+
+- Both prompts include internal validation checkpoints
+- Questions must relate to curriculum and test specific concepts
+- Questions must match target difficulty and candidate experience
+- Follow-ups must be grounded in candidate's actual answer
+- Follow-ups must target ONE specific gap or concept
+- All must be different from previous questions/follow-ups
+
+**Expected Outcomes**:
+
+- Interview feels like real technical conversation with senior engineer
+- Questions test depth and reasoning, not just memorization
+- Follow-ups are contextual and directly address demonstrated evidence
+- Generic prompts completely eliminated
+- Adaptive flow uses evidence to guide conversation intelligently
+
+**Integration**: Works seamlessly with existing `AdaptiveDecisionEngine`, `EvaluationEngine`, and session management. No changes to API contracts, scoring formulas, or frontend functionality.
+
+---

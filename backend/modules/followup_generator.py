@@ -62,6 +62,9 @@ class FollowupGenerator:
         original_question: str,
         candidate_answer: str,
         topic_title: str,
+        evaluation_result = None,
+        expected_points: list[str] = None,
+        previous_followups: list[str] = None,
     ) -> GeneratedQuestion:
         """
         Generate a follow-up question that probes deeper into the topic via LLM.
@@ -70,6 +73,9 @@ class FollowupGenerator:
             original_question: The question that was asked.
             candidate_answer: The candidate's response.
             topic_title: The topic being discussed.
+            evaluation_result: Optional EvaluationResult with missing points, misconceptions, strengths.
+            expected_points: Optional expected points from the original question.
+            previous_followups: Optional list of previous follow-up questions to avoid repetition.
 
         Returns:
             A follow-up question string.
@@ -80,7 +86,10 @@ class FollowupGenerator:
         prompt = build_followup_prompt(
             original_question=original_question,
             candidate_answer=candidate_answer,
-            topic_title=topic_title
+            topic_title=topic_title,
+            evaluation_result=evaluation_result,
+            expected_points=expected_points,
+            previous_followups=previous_followups,
         )
         
         response_data = self.llm.generate_json(prompt, fallback_type="followup", caller_module="FollowupGenerator")

@@ -234,10 +234,19 @@ class InterviewManager:
             return self._end_interview(session_id, state)
 
         elif adaptive_decision.decision == AdaptiveDecision.FOLLOW_UP:
+            # Collect previous follow-ups for this topic to avoid repetition
+            previous_followups = [
+                q.question for q in state.questions_asked
+                if q.topic == current_record.topic and q.followup_count > 0
+            ]
+            
             generated_followup = self.followup_generator.generate(
                 original_question=current_record.question,
                 candidate_answer=message,
                 topic_title=current_record.topic,
+                evaluation_result=evaluation_result,
+                expected_points=current_record.expected_points,
+                previous_followups=previous_followups,
             )
 
             current_record.followup_count += 1

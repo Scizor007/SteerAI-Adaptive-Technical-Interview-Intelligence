@@ -9,7 +9,7 @@
 - **Prompt ID**: PROMPT-001
 - **Timestamp**: 2026-08-08T01:00:00+05:30
 - **Goal**: Scaffold the entire ABTalks project — folder structure, backend modules, frontend foundation, design tokens, documentation
-- **Prompt**: Full project scaffolding request including architecture design, tech stack setup (FastAPI + React/Vite/TS/Tailwind), modular interview system (8 modules), design token system, and 7 documentation files. 
+- **Prompt**: Full project scaffolding request including architecture design, tech stack setup (FastAPI + React/Vite/TS/Tailwind), modular interview system (8 modules), design token system, and 7 documentation files.
 - **Result**: Project fully scaffolded.
 
 ---
@@ -78,3 +78,102 @@
 - **Timestamp**: 2026-08-08
 - **Goal**: Implement OpenRouter as the primary LLM provider without changing the interview architecture.
 - **Result**: Created an `LLMProvider` abstraction. Implemented `OpenRouterProvider` (REST) and `GeminiProvider` (SDK). Refactored `LLMService` to route to providers based on `.env` settings while preserving all central retry, parsing, and fallback logic. Business logic, prompts, and schemas remained entirely untouched.
+
+---
+
+## PROMPT-009
+
+- **Prompt ID**: PROMPT-009
+- **Timestamp**: 2026-08-08
+- **Goal**: Diagnose and resolve Gemini API configuration and quota issues.
+- **Result**: Audited Gemini model availability and SDK configuration, identified the invalid `gemini-1.5-flash` configuration, switched to a supported Gemini model, diagnosed exhausted free-tier quota, and documented the configuration and quota findings. Created temporary audit/debug tooling to trace LLM calls and understand per-interview API usage.
+
+---
+
+## PROMPT-010
+
+- **Prompt ID**: PROMPT-010
+- **Timestamp**: 2026-08-08
+- **Goal**: Diagnose excessive LLM API usage and verify the interview evaluation pipeline.
+- **Result**: Traced the complete LLM call sequence and established the expected request pattern of `1 + (N × 2) + 1` for an N-question interview. Confirmed separate calls for question generation, evaluation, follow-ups where applicable, and final feedback. Verified that the calls were serving distinct responsibilities rather than being accidental duplicate requests.
+
+---
+
+## PROMPT-011
+
+- **Prompt ID**: PROMPT-011
+- **Timestamp**: 2026-08-08
+- **Goal**: Introduce OpenRouter as an alternative LLM provider while preserving the existing architecture.
+- **Result**: Implemented provider abstraction with `LLMProvider`, `OpenRouterProvider`, and `GeminiProvider`. Updated `LLMService` to select the provider through configuration. Existing question generation, evaluation, follow-up, feedback, schemas, and interview progression remained unchanged. Verified the complete interview pipeline using OpenRouter.
+
+---
+
+## PROMPT-012
+
+- **Prompt ID**: PROMPT-012
+- **Timestamp**: 2026-08-08
+- **Goal**: Improve reliability of structured LLM responses.
+- **Result**: Added a lightweight JSON recovery layer to the LLM parser to handle malformed structured responses such as empty numeric values, truncated JSON, missing closing brackets, trailing commas, incomplete fields, and markdown fences. Added unit and performance tests. The recovery layer acts as a safety net without changing interview logic or provider behavior.
+
+---
+
+## PROMPT-013
+
+- **Prompt ID**: PROMPT-013
+- **Timestamp**: 2026-08-08
+- **Goal**: Select a reliable OpenRouter model for structured technical interview evaluation.
+- **Result**: Compared model behavior using the evaluation pipeline. `meta-llama/llama-3.2-3b-instruct` produced malformed JSON in a significant percentage of evaluation responses. Switched the configured OpenRouter model to `openai/gpt-3.5-turbo` and verified a complete interview with 100% successful evaluation responses and no fallback evaluations in the test run.
+
+---
+
+## PROMPT-014
+
+- **Prompt ID**: PROMPT-014
+- **Timestamp**: 2026-08-08
+- **Goal**: Diagnose and fix interview flow reliability issues.
+- **Result**: Fixed duplicate-question detection, follow-up count inheritance, strict follow-up limits, evaluation fallback handling, topic-specific fallback questions, and API-key configuration validation. Added comprehensive interview-flow tests. Verified that the interview progresses without infinite loops and that unavailable LLM evaluations are not incorrectly stored as candidate scores.
+
+---
+
+## PROMPT-015
+
+- **Prompt ID**: PROMPT-015
+- **Timestamp**: 2026-08-09
+- **Goal**: Reorganize project documentation and development files.
+- **Result**: Kept essential project documentation at the repository root and moved historical/debugging material into `docs/archive/` and `docs/dev-notes/`. Organized backend test/debug files under `backend/tests/`. Preserved development history while reducing root-level clutter.
+
+---
+
+## PROMPT-016
+
+- **Prompt ID**: PROMPT-016
+- **Timestamp**: 2026-08-09
+- **Goal**: Resolve GitHub secret-scanning and repository hygiene issues.
+- **Result**: Removed real API credentials from tracked documentation/configuration, replaced credentials with placeholders, verified `.env` is ignored and not tracked, and reorganized temporary verification files. GitHub push protection was satisfied after cleaning the exposed secret from the repository history/working state.
+
+---
+
+## PROMPT-017
+
+- **Prompt ID**: PROMPT-017
+- **Timestamp**: 2026-08-09
+- **Goal**: Fix frontend layout constraints affecting the Landing page.
+- **Result**: Identified the conflict between `AppLayout`'s `container-steer` constraint and the Landing page's full-width hero breakout. Updated the Landing page to use `AppLayout fullBleed`, eliminating the horizontal layout issue while preserving functionality and the behavior of other pages.
+
+---
+
+## PROMPT-018
+
+- **Prompt ID**: PROMPT-018
+- **Timestamp**: 2026-08-09
+- **Goal**: Refine the Interview Workspace UI without changing application functionality.
+- **Result**: Reworked the Interview Workspace into a full-viewport three-column desktop workspace consisting of the candidate/session sidebar, central interview area, and Live Evaluation panel. Improved viewport utilization and removed excessive unused space while preserving all interview functionality and backend behavior.
+
+---
+
+## PROMPT-019
+
+- **Prompt ID**: PROMPT-019
+- **Timestamp**: 2026-08-09
+- **Goal**: Improve Interview Workspace typography and visual hierarchy.
+- **Result**: Refined typography, text sizing, spacing, hierarchy, readability, and visual emphasis while preserving the existing layout and all application functionality. The question became the primary visual focus, with clearer hierarchy for candidate information, answer input, evaluation status, and supporting metadata.
